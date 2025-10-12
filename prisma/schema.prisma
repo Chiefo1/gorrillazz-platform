@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  walletAddress String   @unique
+  walletType    String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  tokens        Token[]
+  transactions  Transaction[]
+}
+
+model Token {
+  id              String   @id @default(cuid())
+  name            String
+  symbol          String
+  decimals        Int      @default(18)
+  totalSupply     String
+  description     String?
+  logoUrl         String?
+  networks        String[] // Array of network IDs
+  contractAddress String?
+  metadataUri     String?
+  creatorId       String
+  creator         User     @relation(fields: [creatorId], references: [id])
+  status          String   @default("pending") // pending, deploying, deployed, failed
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  liquidityPools  LiquidityPool[]
+  transactions    Transaction[]
+
+  @@index([creatorId])
+  @@index([status])
+}
+
+model LiquidityPool {
+  id              String   @id @default(cuid())
+  tokenId         String
+  token           Token    @relation(fields: [tokenId], references: [id])
+  network         String
+  dexPlatform     String   // uniswap, pancakeswap, raydium, gorrillazz
+  poolAddress     String?
+  liquidityAmount String
+  pairToken       String   @default("GORR")
+  status          String   @default("pending") // pending, active, closed
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tokenId])
+  @@index([status])
+}
+
+model Transaction {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  tokenId         String?
+  token           Token?   @relation(fields: [tokenId], references: [id])
+  type            String   // deploy, liquidity, transfer, swap
+  network         String
+  txHash          String?
+  status          String   @default("pending") // pending, confirmed, failed
+  amount          String?
+  fee             String?
+  metadata        Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([tokenId])
+  @@index([status])
+}
+
+model GorrBalance {
+  id            String   @id @default(cuid())
+  walletAddress String   @unique
+  balance       String   @default("0")
+  lockedBalance String   @default("0")
+  updatedAt     DateTime @updatedAt
+}
