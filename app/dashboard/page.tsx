@@ -1,23 +1,21 @@
 "use client"
 
+import { useWallet } from "@/lib/wallet-context"
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import ShaderBackground from "@/components/shader-background"
-import { Navigation } from "@/components/navigation"
-import { GlassCard } from "@/components/glass-card"
 import { Button } from "@/components/ui/button"
-import { useWallet } from "@/lib/wallet-context"
-import { apiClient } from "@/lib/api-client"
-import { Coins, TrendingUp, Droplets, Clock, CheckCircle, XCircle, Loader2 } from "lucide-react"
+import { Card } from "@/components/ui/card"
+import { Coins, TrendingUp, Wallet, Plus, ExternalLink, Copy, Check } from "lucide-react"
 import Link from "next/link"
 
 interface Token {
   id: string
   name: string
   symbol: string
-  networks: string[]
+  network: string
+  contractAddress: string
+  totalSupply: string
   status: string
-  contractAddress?: string
   createdAt: string
 }
 
@@ -25,185 +23,202 @@ export default function DashboardPage() {
   const { address, isConnected } = useWallet()
   const [tokens, setTokens] = useState<Token[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [copiedAddress, setCopiedAddress] = useState<string | null>(null)
 
   useEffect(() => {
     if (isConnected && address) {
-      loadTokens()
+      fetchTokens()
+    } else {
+      setIsLoading(false)
     }
   }, [isConnected, address])
 
-  const loadTokens = async () => {
+  const fetchTokens = async () => {
     try {
-      setIsLoading(true)
-      const response = await apiClient.getTokens(address!)
-      setTokens(response.tokens)
+      const response = await fetch(`/api/tokens/list?wallet=${address}`)
+      const data = await response.json()
+      setTokens(data.tokens || [])
     } catch (error) {
-      console.error("Failed to load tokens:", error)
+      console.error("[v0] Failed to fetch tokens:", error)
     } finally {
       setIsLoading(false)
     }
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "deployed":
-        return <CheckCircle className="w-5 h-5 text-green-500" />
-      case "deploying":
-        return <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
-      case "failed":
-        return <XCircle className="w-5 h-5 text-red-500" />
-      default:
-        return <Clock className="w-5 h-5 text-yellow-500" />
-    }
+  const copyAddress = (addr: string) => {
+    navigator.clipboard.writeText(addr)
+    setCopiedAddress(addr)
+    setTimeout(() => setCopiedAddress(null), 2000)
   }
 
   if (!isConnected) {
     return (
-      <ShaderBackground>
-        <Navigation />
-        <div className="min-h-screen flex items-center justify-center px-6">
-          <GlassCard className="p-12 text-center max-w-md">
-            <h2 className="text-3xl font-bold mb-4">Connect Your Wallet</h2>
-            <p className="text-muted-foreground mb-6">Please connect your wallet to view your dashboard</p>
-          </GlassCard>
-        </div>
-      </ShaderBackground>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center space-y-6 max-w-md"
+        >
+          <div className="w-20 h-20 rounded-full glass flex items-center justify-center mx-auto">
+            <Wallet className="w-10 h-10 text-primary" />
+          </div>
+          <h1 className="text-3xl font-bold text-foreground">Connect Your Wallet</h1>
+          <p className="text-muted-foreground">
+            Please connect your wallet to view your dashboard and manage your tokens.
+          </p>
+        </motion.div>
+      </div>
     )
   }
 
   return (
-    <ShaderBackground>
-      <Navigation />
+    <div className="min-h-screen p-4 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header */}
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground">Manage your tokens and track your portfolio</p>
+        </motion.div>
 
-      <div className="min-h-screen pt-32 pb-16 px-6">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">Dashboard</h1>
-            <p className="text-xl text-muted-foreground">Manage your tokens and liquidity pools</p>
-          </div>
+        {/* Stats Cards */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+        >
+          <Card className="glass p-6 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground text-sm">Total Tokens</span>
+              <Coins className="w-5 h-5 text-primary" />
+            </div>
+            <p className="text-3xl font-bold text-foreground">{tokens.length}</p>
+            <p className="text-xs text-muted-foreground">Across all networks</p>
+          </Card>
 
-          {/* Stats Grid */}
-          <div className="grid md:grid-cols-4 gap-6 mb-12">
-            <GlassCard className="p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-                  <Coins className="w-5 h-5 text-primary" />
-                </div>
-                <span className="text-sm text-muted-foreground">Total Tokens</span>
-              </div>
-              <div className="text-3xl font-bold">{tokens.length}</div>
-            </GlassCard>
+          <Card className="glass p-6 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground text-sm">Portfolio Value</span>
+              <TrendingUp className="w-5 h-5 text-primary" />
+            </div>
+            <p className="text-3xl font-bold text-foreground">$0.00</p>
+            <p className="text-xs text-green-500">+0.00% (24h)</p>
+          </Card>
 
-            <GlassCard className="p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                </div>
-                <span className="text-sm text-muted-foreground">Deployed</span>
-              </div>
-              <div className="text-3xl font-bold">{tokens.filter((t) => t.status === "deployed").length}</div>
-            </GlassCard>
+          <Card className="glass p-6 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground text-sm">GORR Balance</span>
+              <Wallet className="w-5 h-5 text-primary" />
+            </div>
+            <p className="text-3xl font-bold text-foreground">0.00</p>
+            <p className="text-xs text-muted-foreground">≈ $0.00 USD</p>
+          </Card>
+        </motion.div>
 
-            <GlassCard className="p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-blue-500" />
-                </div>
-                <span className="text-sm text-muted-foreground">Total Value</span>
-              </div>
-              <div className="text-3xl font-bold">$0</div>
-            </GlassCard>
-
-            <GlassCard className="p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                  <Droplets className="w-5 h-5 text-purple-500" />
-                </div>
-                <span className="text-sm text-muted-foreground">Liquidity Pools</span>
-              </div>
-              <div className="text-3xl font-bold">0</div>
-            </GlassCard>
-          </div>
-
-          {/* Tokens List */}
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-2xl font-bold">Your Tokens</h2>
+        {/* Tokens List */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="space-y-4"
+        >
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-foreground">Your Tokens</h2>
             <Link href="/create">
-              <Button className="neon-glow">
-                <Coins className="w-4 h-4 mr-2" />
-                Create New Token
+              <Button className="bg-primary hover:bg-primary/90">
+                <Plus className="w-4 h-4 mr-2" />
+                Create Token
               </Button>
             </Link>
           </div>
 
           {isLoading ? (
-            <GlassCard className="p-12 text-center">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-              <p className="text-muted-foreground">Loading your tokens...</p>
-            </GlassCard>
+            <div className="glass rounded-2xl p-12 text-center">
+              <p className="text-muted-foreground">Loading tokens...</p>
+            </div>
           ) : tokens.length === 0 ? (
-            <GlassCard className="p-12 text-center">
-              <Coins className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-xl font-bold mb-2">No tokens yet</h3>
-              <p className="text-muted-foreground mb-6">Create your first token to get started</p>
+            <Card className="glass p-12 text-center space-y-4">
+              <div className="w-16 h-16 rounded-full glass-strong flex items-center justify-center mx-auto">
+                <Coins className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-xl font-semibold text-foreground">No tokens yet</h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                Create your first token to get started with Gorrillazz platform
+              </p>
               <Link href="/create">
-                <Button className="neon-glow">Create Token</Button>
+                <Button className="bg-primary hover:bg-primary/90 mt-4">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Your First Token
+                </Button>
               </Link>
-            </GlassCard>
+            </Card>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {tokens.map((token, index) => (
                 <motion.div
                   key={token.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
                 >
-                  <GlassCard className="p-6 hover:glass-strong transition-all">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                          <span className="text-xl font-bold">{token.symbol.charAt(0)}</span>
+                  <Card className="glass p-6 hover:glass-strong transition-all">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-4 flex-1">
+                        <div className="w-12 h-12 rounded-xl glass-strong flex items-center justify-center">
+                          <span className="text-lg font-bold text-primary">{token.symbol.charAt(0)}</span>
                         </div>
-                        <div>
-                          <h3 className="text-xl font-bold">{token.name}</h3>
-                          <p className="text-sm text-muted-foreground">{token.symbol}</p>
+                        <div className="flex-1 space-y-2">
+                          <div>
+                            <h3 className="text-lg font-semibold text-foreground">{token.name}</h3>
+                            <p className="text-sm text-muted-foreground">{token.symbol}</p>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <span className="px-2 py-1 rounded-full glass-strong text-xs text-foreground capitalize">
+                              {token.network}
+                            </span>
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs ${
+                                token.status === "deployed"
+                                  ? "bg-green-500/20 text-green-500"
+                                  : "bg-yellow-500/20 text-yellow-500"
+                              }`}
+                            >
+                              {token.status}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
+                            <span>{token.contractAddress}</span>
+                            <button
+                              onClick={() => copyAddress(token.contractAddress)}
+                              className="hover:text-foreground transition-colors"
+                            >
+                              {copiedAddress === token.contractAddress ? (
+                                <Check className="w-3 h-3 text-green-500" />
+                              ) : (
+                                <Copy className="w-3 h-3" />
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-6">
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">Networks</p>
-                          <div className="flex gap-1">
-                            {token.networks.map((network) => (
-                              <span key={network} className="px-2 py-1 rounded glass-strong text-xs">
-                                {network}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">Status</p>
-                          <div className="flex items-center gap-2">
-                            {getStatusIcon(token.status)}
-                            <span className="text-sm capitalize">{token.status}</span>
-                          </div>
-                        </div>
-
-                        <Button variant="outline" size="sm" className="glass bg-transparent">
-                          View Details
+                      <div className="text-right space-y-2">
+                        <p className="text-sm text-muted-foreground">Total Supply</p>
+                        <p className="text-lg font-semibold text-foreground">
+                          {Number(token.totalSupply).toLocaleString()}
+                        </p>
+                        <Button variant="outline" size="sm" className="glass border-white/20 bg-transparent">
+                          <ExternalLink className="w-3 h-3 mr-1" />
+                          View
                         </Button>
                       </div>
                     </div>
-                  </GlassCard>
+                  </Card>
                 </motion.div>
               ))}
             </div>
           )}
-        </div>
+        </motion.div>
       </div>
-    </ShaderBackground>
+    </div>
   )
 }

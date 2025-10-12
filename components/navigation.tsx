@@ -4,104 +4,149 @@ import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Menu, X } from "lucide-react"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { WalletButton } from "@/components/wallet-button"
+import WalletButton from "./wallet-button"
 
-export function Navigation() {
-  const [isOpen, setIsOpen] = useState(false)
+export default function Navigation() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   const menuItems = [
     { label: "Home", href: "/" },
-    { label: "Create Token", href: "/create" },
-    { label: "Dashboard", href: "/dashboard" },
-    { label: "Liquidity", href: "/liquidity" },
-    { label: "Docs", href: "/docs" },
+    { label: "Token Creator", href: "/create" },
+    { label: "Liquidity Pools", href: "/dashboard" },
+    { label: "Wallet", href: "/dashboard" },
+    { label: "GORR Stablecoin", href: "/#gorr" },
+    { label: "Documentation", href: "/#docs" },
+    { label: "Contact", href: "/#contact" },
+    { label: "About", href: "/#about" },
   ]
 
   return (
     <>
-      {/* Fixed Top Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 glass-strong">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center neon-glow">
-                <span className="text-2xl font-bold">🦍</span>
+      <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-6">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          {/* Logo - Center on mobile, left on desktop */}
+          <Link href="/" className="absolute left-1/2 -translate-x-1/2 md:relative md:left-0 md:translate-x-0">
+            <motion.div
+              className="flex items-center gap-3"
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: "spring", stiffness: 400 }}
+            >
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/50">
+                <span className="text-2xl">🦍</span>
               </div>
-              <span className="text-2xl font-bold tracking-tight">GORRILLAZZ</span>
-            </Link>
+              <span className="text-2xl font-bold text-foreground tracking-tight font-sans">Gorrillazz</span>
+            </motion.div>
+          </Link>
 
-            {/* Desktop Menu */}
-            <div className="hidden md:flex items-center gap-8">
-              {menuItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-
-            {/* CTA Buttons */}
-            <div className="hidden md:flex items-center gap-4">
-              <WalletButton />
-              <Link href="/create">
-                <Button size="sm" className="neon-glow">
-                  Launch App
-                </Button>
-              </Link>
-            </div>
-
-            {/* Mobile Menu Button */}
-            <button onClick={() => setIsOpen(!isOpen)} className="md:hidden glass p-2 rounded-xl">
-              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+          {/* Desktop Wallet Button */}
+          <div className="hidden md:block">
+            <WalletButton />
           </div>
+
+          {/* Hamburger Menu Button */}
+          <motion.button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="relative z-50 p-2 text-foreground"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <AnimatePresence mode="wait">
+              {isMenuOpen ? (
+                <motion.div
+                  key="close"
+                  initial={{ rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: 90, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <X size={28} className="text-foreground" />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="menu"
+                  initial={{ rotate: 90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: -90, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Menu size={28} className="text-foreground" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.button>
         </div>
       </nav>
 
-      {/* Fullscreen Mobile Menu */}
       <AnimatePresence>
-        {isOpen && (
+        {isMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -100 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-40 glass-strong md:hidden"
+            exit={{ opacity: 0, y: -100 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed inset-0 z-40"
           >
-            <div className="flex flex-col items-center justify-center h-full gap-8 px-6">
-              {menuItems.map((item, index) => (
-                <motion.div
-                  key={item.href}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <Link
-                    href={item.href}
-                    onClick={() => setIsOpen(false)}
-                    className="text-3xl font-bold hover:text-primary transition-colors"
-                  >
-                    {item.label}
-                  </Link>
-                </motion.div>
-              ))}
+            {/* Glassmorphic Background */}
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-2xl border-b border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)]" />
+
+            {/* Menu Content */}
+            <div className="relative h-full flex flex-col items-center justify-center px-6">
+              {/* Logo in Center */}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+                className="mb-16"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-2xl shadow-primary/50">
+                    <span className="text-4xl">🦍</span>
+                  </div>
+                  <span className="text-5xl md:text-6xl font-bold text-foreground tracking-tight font-sans">
+                    Gorrillazz
+                  </span>
+                </div>
+              </motion.div>
+
+              {/* Navigation Links with Stagger Animation */}
+              <nav className="flex flex-col items-center gap-6 mb-16">
+                {menuItems.map((item, index) => (
+                  <motion.div
+                    key={item.label}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      delay: 0.3 + index * 0.08,
+                      duration: 0.5,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                  >
+                    <Link href={item.href} onClick={() => setIsMenuOpen(false)} className="group relative block">
+                      <motion.span
+                        className="text-3xl md:text-5xl font-light text-foreground tracking-wider font-sans"
+                        whileHover={{ scale: 1.05, x: 10 }}
+                        transition={{ type: "spring", stiffness: 400 }}
+                      >
+                        {item.label}
+                      </motion.span>
+                      {/* Neon Glow on Hover */}
+                      <motion.div
+                        className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 -z-10"
+                        transition={{ duration: 0.3 }}
+                      />
+                    </Link>
+                  </motion.div>
+                ))}
+              </nav>
+
+              {/* Wallet Button */}
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: menuItems.length * 0.1 }}
-                className="flex flex-col gap-4 w-full max-w-xs mt-8"
+                transition={{ delay: 0.3 + menuItems.length * 0.08, duration: 0.5 }}
+                className="w-full max-w-xs"
               >
                 <WalletButton />
-                <Link href="/create">
-                  <Button size="lg" className="w-full neon-glow">
-                    Launch App
-                  </Button>
-                </Link>
               </motion.div>
             </div>
           </motion.div>

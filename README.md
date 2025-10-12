@@ -1,30 +1,67 @@
-# Gorrillazz platform
+# 🦍 Gorrillazz Platform
 
-*Automatically synced with your [v0.app](https://v0.app) deployments*
+A multi-chain token creation platform with native GORR stablecoin.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/chiefo1s-projects/v0-gorrillazz-platform)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/projects/zRS0khjdCAx)
+## Features
 
-## Overview
+- **Multi-Chain Support**: Deploy tokens on Solana, Ethereum, BNB Smart Chain, and Gorrillazz custom chain
+- **Liquidity Management**: Create and manage liquidity pools with lock periods
+- **Wallet Integration**: Support for Phantom, MetaMask, and custom Gorrillazz wallet
+- **GORR Stablecoin**: Native stablecoin for platform transactions
+- **Glassmorphic UI**: Premium iOS 26.1.1 inspired design with shader backgrounds
 
-This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
+## Tech Stack
+
+- **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS v4
+- **Animations**: Framer Motion, @paper-design/shaders-react
+- **Database**: MongoDB (Digital Ocean)
+- **Blockchain SDKs**:
+  - Solana: @solana/web3.js, @solana/spl-token
+  - Ethereum/BNB: ethers.js
+- **Storage**: Digital Ocean Spaces, IPFS, Arweave
+
+## Setup
+
+1. **Install Dependencies**
+\`\`\`bash
+npm install
+\`\`\`
+
+2. **Configure Environment Variables**
+Copy `.env.example` to `.env.local` and fill in your values:
+\`\`\`bash
+cp .env.example .env.local
+\`\`\`
+
+3. **Initialize MongoDB**
+Run the initialization script to create collections and indexes:
+\`\`\`bash
+python scripts/init-mongodb.py
+\`\`\`
+
+4. **Run Development Server**
+\`\`\`bash
+npm run dev
+\`\`\`
+
+## Environment Variables
+
+See `.env.example` for all required environment variables including:
+- MongoDB connection (Digital Ocean)
+- Blockchain RPC URLs (Solana, Ethereum, BNB)
+- Private keys for token deployment
+- IPFS/Arweave configuration
+- Digital Ocean Spaces credentials
 
 ## Deployment
 
-Your project is live at:
+Deploy to Vercel with one click or use the Vercel CLI:
+\`\`\`bash
+vercel deploy
+\`\`\`
 
-**[https://vercel.com/chiefo1s-projects/v0-gorrillazz-platform](https://vercel.com/chiefo1s-projects/v0-gorrillazz-platform)**
+Make sure to add all environment variables in your Vercel project settings.
 
-## Build your app
+## License
 
-Continue building your app on:
-
-**[https://v0.app/chat/projects/zRS0khjdCAx](https://v0.app/chat/projects/zRS0khjdCAx)**
-
-## How It Works
-
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+MIT

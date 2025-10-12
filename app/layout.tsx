@@ -3,13 +3,14 @@ import type { Metadata } from "next"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
-import "./globals.css"
 import { Suspense } from "react"
 import { WalletProvider } from "@/lib/wallet-context"
+import "./globals.css"
 
 export const metadata: Metadata = {
   title: "Gorrillazz - Multi-Chain Token Creation Platform",
-  description: "Create and deploy tokens across Solana, Ethereum, BNB, and Gorrillazz network with instant liquidity",
+  description:
+    "Create and deploy tokens across Solana, Ethereum, BNB, and Gorrillazz network. Powered by GORR stablecoin.",
   generator: "v0.app",
 }
 

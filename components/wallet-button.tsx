@@ -1,16 +1,21 @@
 "use client"
 
 import { useState } from "react"
-import { Wallet, ChevronDown, Copy, ExternalLink, LogOut, Check } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Wallet, ChevronDown, LogOut, Copy, Check } from "lucide-react"
 import { useWallet } from "@/lib/wallet-context"
-import { WalletConnectModal } from "@/components/wallet-connect-modal"
-import { motion, AnimatePresence } from "framer-motion"
+import { Button } from "@/components/ui/button"
+import WalletConnectModal from "./wallet-connect-modal"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
-export function WalletButton() {
-  const { isConnected, address, balance, disconnect, walletType } = useWallet()
+export default function WalletButton() {
+  const { isConnected, address, chain, disconnect } = useWallet()
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [copied, setCopied] = useState(false)
 
   const formatAddress = (addr: string) => {
@@ -25,25 +30,20 @@ export function WalletButton() {
     }
   }
 
-  const getWalletIcon = () => {
-    switch (walletType) {
-      case "phantom":
-        return "👻"
-      case "metamask":
-        return "🦊"
-      case "walletconnect":
-        return "🔗"
-      case "gorrillazz":
-        return "🦍"
-      default:
-        return null
+  const getChainBadge = () => {
+    const badges = {
+      solana: { label: "Solana", color: "bg-purple-500/20 text-purple-400" },
+      ethereum: { label: "Ethereum", color: "bg-blue-500/20 text-blue-400" },
+      bnb: { label: "BNB", color: "bg-yellow-500/20 text-yellow-400" },
+      gorrillazz: { label: "Gorrillazz", color: "bg-primary/20 text-primary" },
     }
+    return chain ? badges[chain] : null
   }
 
   if (!isConnected) {
     return (
       <>
-        <Button onClick={() => setIsModalOpen(true)} className="neon-glow">
+        <Button onClick={() => setIsModalOpen(true)} variant="ghost" size="sm" className="text-foreground">
           <Wallet className="w-4 h-4 mr-2" />
           Connect Wallet
         </Button>
@@ -52,77 +52,41 @@ export function WalletButton() {
     )
   }
 
+  const chainBadge = getChainBadge()
+
   return (
-    <div className="relative">
-      <button
-        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        className="glass-strong rounded-xl px-4 py-2 flex items-center gap-3 hover:neon-glow transition-all"
-      >
-        <div className="flex items-center gap-2">
-          <span className="text-lg">{getWalletIcon()}</span>
-          <div className="text-left hidden sm:block">
-            <div className="text-sm font-medium">{formatAddress(address!)}</div>
-            <div className="text-xs text-muted-foreground">{balance} GORR</div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" className="glass text-foreground">
+          <div className="flex items-center gap-2">
+            {chainBadge && (
+              <span className={`px-2 py-0.5 rounded-full text-xs ${chainBadge.color}`}>{chainBadge.label}</span>
+            )}
+            <span className="font-mono">{formatAddress(address!)}</span>
+            <ChevronDown className="w-4 h-4" />
           </div>
-        </div>
-        <ChevronDown className={`w-4 h-4 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`} />
-      </button>
-
-      <AnimatePresence>
-        {isDropdownOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsDropdownOpen(false)}
-              className="fixed inset-0 z-40"
-            />
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="absolute right-0 mt-2 w-64 glass-strong rounded-xl p-2 z-50"
-            >
-              <div className="p-3 border-b border-border">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">{getWalletIcon()}</span>
-                  <span className="text-sm font-medium capitalize">{walletType}</span>
-                </div>
-                <div className="text-xs text-muted-foreground mb-1">Balance</div>
-                <div className="text-lg font-bold">{balance} GORR</div>
-              </div>
-
-              <div className="p-1">
-                <button
-                  onClick={copyAddress}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:glass transition-all text-left"
-                >
-                  {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                  <span className="text-sm">{copied ? "Copied!" : "Copy Address"}</span>
-                </button>
-
-                <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:glass transition-all text-left">
-                  <ExternalLink className="w-4 h-4" />
-                  <span className="text-sm">View on Explorer</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    disconnect()
-                    setIsDropdownOpen(false)
-                  }}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:glass transition-all text-left text-destructive"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span className="text-sm">Disconnect</span>
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </div>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="glass-strong border-white/20 w-56">
+        <DropdownMenuItem onClick={copyAddress} className="cursor-pointer">
+          {copied ? (
+            <>
+              <Check className="w-4 h-4 mr-2" />
+              Copied!
+            </>
+          ) : (
+            <>
+              <Copy className="w-4 h-4 mr-2" />
+              Copy Address
+            </>
+          )}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator className="bg-white/10" />
+        <DropdownMenuItem onClick={disconnect} className="cursor-pointer text-destructive">
+          <LogOut className="w-4 h-4 mr-2" />
+          Disconnect
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
