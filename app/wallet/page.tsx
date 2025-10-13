@@ -11,15 +11,30 @@ import GlassInput from "@/components/glass/glass-input"
 import GlassModal from "@/components/glass/glass-modal"
 import GlassToggle from "@/components/glass/glass-toggle"
 import { useWallet } from "@/lib/wallet-context"
-import { Wallet, Plus, Copy, Check, TrendingUp, TrendingDown, Upload, RefreshCw } from "lucide-react"
+import {
+  Wallet,
+  Plus,
+  Copy,
+  Check,
+  TrendingUp,
+  TrendingDown,
+  Upload,
+  RefreshCw,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Repeat,
+} from "lucide-react"
 import { SUPPORTED_CHAINS } from "@/lib/constants/gorr-token"
+import Image from "next/image"
 
 type ViewMode = "tokens" | "coins"
+type TradeType = "buy" | "sell" | "trade"
 
 export default function WalletPage() {
   const { address, chain, balance, gorrBalance, isConnected, disconnect } = useWallet()
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showImportModal, setShowImportModal] = useState(false)
+  const [showTradeModal, setShowTradeModal] = useState(false)
   const [walletName, setWalletName] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -32,8 +47,17 @@ export default function WalletPage() {
   const [balances, setBalances] = useState<any>(null)
   const [trades, setTrades] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
+
   const [importAddress, setImportAddress] = useState("")
   const [importChain, setImportChain] = useState("ethereum")
+  const [importName, setImportName] = useState("")
+  const [importSymbol, setImportSymbol] = useState("")
+  const [importDecimals, setImportDecimals] = useState("18")
+  const [importLogo, setImportLogo] = useState("")
+
+  const [selectedToken, setSelectedToken] = useState<any>(null)
+  const [tradeType, setTradeType] = useState<TradeType>("buy")
+  const [tradeAmount, setTradeAmount] = useState("")
 
   useEffect(() => {
     if (isConnected && address) {
@@ -41,7 +65,7 @@ export default function WalletPage() {
       fetchBalances()
       fetchTrades()
     }
-  }, [isConnected, address, selectedChain])
+  }, [isConnected, address, selectedChain, viewMode])
 
   const fetchTokens = async () => {
     try {
@@ -93,6 +117,10 @@ export default function WalletPage() {
           contractAddress: importAddress,
           chain: importChain,
           walletAddress: address,
+          name: importName,
+          symbol: importSymbol,
+          decimals: Number.parseInt(importDecimals),
+          logo: importLogo,
         }),
       })
 
@@ -100,6 +128,10 @@ export default function WalletPage() {
       if (data.success) {
         setShowImportModal(false)
         setImportAddress("")
+        setImportName("")
+        setImportSymbol("")
+        setImportDecimals("18")
+        setImportLogo("")
         await fetchTokens()
       }
     } catch (error) {
@@ -107,6 +139,42 @@ export default function WalletPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleTrade = async () => {
+    if (!selectedToken || !tradeAmount) return
+
+    try {
+      setLoading(true)
+      const response = await fetch("/api/wallet/trade", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: tradeType,
+          tokenId: selectedToken.id,
+          amount: tradeAmount,
+          walletAddress: address,
+          chain: selectedToken.chain,
+        }),
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        setShowTradeModal(false)
+        setTradeAmount("")
+        await Promise.all([fetchTokens(), fetchBalances(), fetchTrades()])
+      }
+    } catch (error) {
+      console.error("[v0] Failed to execute trade:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const openTradeModal = (token: any, type: TradeType) => {
+    setSelectedToken(token)
+    setTradeType(type)
+    setShowTradeModal(true)
   }
 
   const generateSeedPhrase = () => {
@@ -164,13 +232,21 @@ export default function WalletPage() {
     }
   }
 
+  const handleViewModeToggle = (checked: boolean) => {
+    setViewMode(checked ? "coins" : "tokens")
+  }
+
+  const handleChainSelect = (chainId: string) => {
+    setSelectedChain(chainId)
+  }
+
   return (
     <ShaderBackground>
       <Navigation />
       <BackButton href="/" />
 
       <main className="relative min-h-screen flex items-center justify-center px-6 pt-32 pb-20">
-        <div className="max-w-6xl w-full">
+        <div className="max-w-7xl w-full">
           {/* Header */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
             <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-4">
@@ -181,18 +257,37 @@ export default function WalletPage() {
 
           {isConnected ? (
             <div className="space-y-6">
-              {/* Wallet Info Card */}
               <GlassCard variant="primary">
-                <div className="flex items-start justify-between mb-6">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-primary/30 flex items-center justify-center">
-                      <Wallet className="w-6 h-6 text-primary" />
+                    <div className="w-10 h-10 rounded-xl bg-primary/30 flex items-center justify-center">
+                      <Wallet className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-semibold text-foreground">Connected Wallet</h3>
-                      <p className="text-sm text-muted-foreground capitalize">{chain} Network</p>
+                      <h3 className="text-lg font-semibold text-foreground">Connected</h3>
+                      <div className="flex items-center gap-2">
+                        <code className="text-xs text-muted-foreground font-mono">
+                          {address?.slice(0, 6)}...{address?.slice(-4)}
+                        </code>
+                        <button onClick={copyAddress} className="p-1 hover:bg-white/10 rounded transition-colors">
+                          {copied ? (
+                            <Check className="w-3 h-3 text-accent" />
+                          ) : (
+                            <Copy className="w-3 h-3 text-muted-foreground" />
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
+
+                  {balances && (
+                    <div className="text-right">
+                      <p className="text-xs text-muted-foreground">Portfolio</p>
+                      <p className="text-2xl font-bold text-foreground">${balances.totalValue?.toLocaleString()}</p>
+                      <p className="text-xs text-accent">+2.34%</p>
+                    </div>
+                  )}
+
                   <div className="flex gap-2">
                     <GlassButton variant="transparent" size="sm" onClick={handleRefresh} disabled={loading}>
                       <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
@@ -202,34 +297,6 @@ export default function WalletPage() {
                     </GlassButton>
                   </div>
                 </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
-                    <span className="text-sm text-muted-foreground">Address</span>
-                    <div className="flex items-center gap-2">
-                      <code className="text-sm text-foreground font-mono">
-                        {address?.slice(0, 6)}...{address?.slice(-4)}
-                      </code>
-                      <button onClick={copyAddress} className="p-1 hover:bg-white/10 rounded transition-colors">
-                        {copied ? (
-                          <Check className="w-4 h-4 text-accent" />
-                        ) : (
-                          <Copy className="w-4 h-4 text-muted-foreground" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {balances && (
-                    <div className="p-6 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 border border-white/10">
-                      <p className="text-sm text-muted-foreground mb-2">Total Portfolio Value</p>
-                      <p className="text-4xl font-bold text-foreground mb-1">
-                        ${balances.totalValue?.toLocaleString()}
-                      </p>
-                      <p className="text-sm text-accent">+2.34% (24h)</p>
-                    </div>
-                  )}
-                </div>
               </GlassCard>
 
               <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
@@ -237,16 +304,16 @@ export default function WalletPage() {
                   <GlassButton
                     variant={selectedChain === "all" ? "primary" : "transparent"}
                     size="sm"
-                    onClick={() => setSelectedChain("all")}
+                    onClick={() => handleChainSelect("all")}
                   >
-                    All Chains
+                    All
                   </GlassButton>
                   {SUPPORTED_CHAINS.map((c) => (
                     <GlassButton
                       key={c.id}
                       variant={selectedChain === c.id ? "primary" : "transparent"}
                       size="sm"
-                      onClick={() => setSelectedChain(c.id)}
+                      onClick={() => handleChainSelect(c.id)}
                     >
                       {c.symbol}
                     </GlassButton>
@@ -256,12 +323,12 @@ export default function WalletPage() {
                 <div className="flex items-center gap-4">
                   <GlassToggle
                     checked={viewMode === "coins"}
-                    onChange={(checked) => setViewMode(checked ? "coins" : "tokens")}
+                    onChange={handleViewModeToggle}
                     label={viewMode === "coins" ? "Coins" : "Tokens"}
                   />
                   <GlassButton variant="primary" size="sm" onClick={() => setShowImportModal(true)}>
                     <Upload className="w-4 h-4 mr-2" />
-                    Import Token
+                    Import
                   </GlassButton>
                 </div>
               </div>
@@ -270,42 +337,83 @@ export default function WalletPage() {
                 <h3 className="text-xl font-semibold text-foreground mb-4">
                   {viewMode === "tokens" ? "Your Tokens" : "Popular Coins"}
                 </h3>
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                   {tokens.map((token) => (
                     <div
                       key={token.id}
-                      className="flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
+                      className="p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all border border-white/5 hover:border-white/20"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                          <span className="text-sm font-bold">{token.symbol.slice(0, 2)}</span>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="relative w-8 h-8 rounded-full overflow-hidden bg-white/10">
+                          <Image
+                            src={token.logo || "/placeholder.svg"}
+                            alt={token.symbol}
+                            fill
+                            className="object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement
+                              target.src = "https://via.placeholder.com/32"
+                            }}
+                          />
                         </div>
-                        <div>
-                          <p className="font-semibold text-foreground">{token.name}</p>
-                          <p className="text-sm text-muted-foreground">{token.symbol}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm text-foreground truncate">{token.symbol}</p>
+                          <p className="text-xs text-muted-foreground truncate">{token.name}</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-foreground">${token.price.toLocaleString()}</p>
-                        <div className="flex items-center gap-1 text-sm">
-                          {token.change24h >= 0 ? (
-                            <>
-                              <TrendingUp className="w-3 h-3 text-accent" />
-                              <span className="text-accent">+{token.change24h}%</span>
-                            </>
-                          ) : (
-                            <>
-                              <TrendingDown className="w-3 h-3 text-destructive" />
-                              <span className="text-destructive">{token.change24h}%</span>
-                            </>
-                          )}
+
+                      <div className="space-y-2 mb-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-muted-foreground">Price</span>
+                          <span className="text-sm font-semibold text-foreground">${token.price.toLocaleString()}</span>
                         </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-muted-foreground">24h</span>
+                          <div className="flex items-center gap-1">
+                            {token.change24h >= 0 ? (
+                              <>
+                                <TrendingUp className="w-3 h-3 text-accent" />
+                                <span className="text-xs text-accent">+{token.change24h}%</span>
+                              </>
+                            ) : (
+                              <>
+                                <TrendingDown className="w-3 h-3 text-destructive" />
+                                <span className="text-xs text-destructive">{token.change24h}%</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-1">
+                        <button
+                          onClick={() => openTradeModal(token, "buy")}
+                          className="px-2 py-1 text-xs rounded-lg bg-accent/20 hover:bg-accent/30 text-accent transition-colors flex items-center justify-center gap-1"
+                        >
+                          <ArrowDownLeft className="w-3 h-3" />
+                          Buy
+                        </button>
+                        <button
+                          onClick={() => openTradeModal(token, "sell")}
+                          className="px-2 py-1 text-xs rounded-lg bg-destructive/20 hover:bg-destructive/30 text-destructive transition-colors flex items-center justify-center gap-1"
+                        >
+                          <ArrowUpRight className="w-3 h-3" />
+                          Sell
+                        </button>
+                        <button
+                          onClick={() => openTradeModal(token, "trade")}
+                          className="px-2 py-1 text-xs rounded-lg bg-primary/20 hover:bg-primary/30 text-primary transition-colors flex items-center justify-center gap-1"
+                        >
+                          <Repeat className="w-3 h-3" />
+                          Swap
+                        </button>
                       </div>
                     </div>
                   ))}
                 </div>
               </GlassCard>
 
+              {/* Recent Trades */}
               <GlassCard>
                 <h3 className="text-xl font-semibold text-foreground mb-4">Recent Trades</h3>
                 <div className="space-y-3">
@@ -443,7 +551,7 @@ export default function WalletPage() {
 
       <GlassModal open={showImportModal} onClose={() => setShowImportModal(false)}>
         <div>
-          <h2 className="text-2xl font-bold text-foreground mb-6">Import Token</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-6">Import Custom Token</h2>
           <div className="space-y-4">
             <GlassInput
               label="Contract Address"
@@ -451,9 +559,38 @@ export default function WalletPage() {
               value={importAddress}
               onChange={(e) => setImportAddress(e.target.value)}
             />
+            <div className="grid grid-cols-2 gap-4">
+              <GlassInput
+                label="Token Name"
+                placeholder="My Token"
+                value={importName}
+                onChange={(e) => setImportName(e.target.value)}
+              />
+              <GlassInput
+                label="Symbol"
+                placeholder="MTK"
+                value={importSymbol}
+                onChange={(e) => setImportSymbol(e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <GlassInput
+                label="Decimals"
+                type="number"
+                placeholder="18"
+                value={importDecimals}
+                onChange={(e) => setImportDecimals(e.target.value)}
+              />
+              <GlassInput
+                label="Logo URL (optional)"
+                placeholder="https://..."
+                value={importLogo}
+                onChange={(e) => setImportLogo(e.target.value)}
+              />
+            </div>
             <div>
               <label className="block text-sm font-medium text-muted-foreground mb-2">Chain</label>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 {SUPPORTED_CHAINS.map((c) => (
                   <GlassButton
                     key={c.id}
@@ -472,7 +609,79 @@ export default function WalletPage() {
               Cancel
             </GlassButton>
             <GlassButton variant="primary" onClick={handleImportToken} disabled={loading} className="flex-1">
-              {loading ? "Importing..." : "Import"}
+              {loading ? "Importing..." : "Import Token"}
+            </GlassButton>
+          </div>
+        </div>
+      </GlassModal>
+
+      <GlassModal open={showTradeModal} onClose={() => setShowTradeModal(false)}>
+        <div>
+          <h2 className="text-2xl font-bold text-foreground mb-6 capitalize">
+            {tradeType} {selectedToken?.symbol}
+          </h2>
+          {selectedToken && (
+            <div className="space-y-4">
+              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="relative w-10 h-10 rounded-full overflow-hidden bg-white/10">
+                    <Image
+                      src={selectedToken.logo || "/placeholder.svg"}
+                      alt={selectedToken.symbol}
+                      fill
+                      className="object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement
+                        target.src = "https://via.placeholder.com/40"
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">{selectedToken.name}</p>
+                    <p className="text-sm text-muted-foreground">{selectedToken.symbol}</p>
+                  </div>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Current Price</span>
+                  <span className="font-semibold text-foreground">${selectedToken.price.toLocaleString()}</span>
+                </div>
+              </div>
+
+              <GlassInput
+                label="Amount"
+                type="number"
+                placeholder="0.00"
+                value={tradeAmount}
+                onChange={(e) => setTradeAmount(e.target.value)}
+              />
+
+              {tradeAmount && (
+                <div className="p-4 rounded-xl bg-primary/10 border border-primary/20">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-muted-foreground">Estimated Total</span>
+                    <span className="font-semibold text-foreground">
+                      ${(Number.parseFloat(tradeAmount) * selectedToken.price).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Network Fee</span>
+                    <span className="text-muted-foreground">~$2.50</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="flex gap-3 mt-6">
+            <GlassButton variant="transparent" onClick={() => setShowTradeModal(false)} className="flex-1">
+              Cancel
+            </GlassButton>
+            <GlassButton
+              variant={tradeType === "sell" ? "danger" : "primary"}
+              onClick={handleTrade}
+              disabled={loading || !tradeAmount}
+              className="flex-1"
+            >
+              {loading ? "Processing..." : `Confirm ${tradeType}`}
             </GlassButton>
           </div>
         </div>

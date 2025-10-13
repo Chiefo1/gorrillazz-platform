@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 
-// Mock token database
 const ALL_TOKENS = [
   {
     id: "gorr",
@@ -13,6 +12,7 @@ const ALL_TOKENS = [
     volume24h: 5000000,
     logo: "/gorr-logo.png",
     isPopular: true,
+    balance: 0,
   },
   {
     id: "eth",
@@ -23,8 +23,9 @@ const ALL_TOKENS = [
     change24h: 2.34,
     marketCap: 390000000000,
     volume24h: 15000000000,
-    logo: "/eth-logo.png",
+    logo: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
     isPopular: true,
+    balance: 0,
   },
   {
     id: "bnb",
@@ -35,8 +36,9 @@ const ALL_TOKENS = [
     change24h: -1.23,
     marketCap: 48000000000,
     volume24h: 1200000000,
-    logo: "/bnb-logo.png",
+    logo: "https://cryptologos.cc/logos/bnb-bnb-logo.png",
     isPopular: true,
+    balance: 0,
   },
   {
     id: "sol",
@@ -47,8 +49,9 @@ const ALL_TOKENS = [
     change24h: 5.67,
     marketCap: 42000000000,
     volume24h: 2500000000,
-    logo: "/sol-logo.png",
+    logo: "https://cryptologos.cc/logos/solana-sol-logo.png",
     isPopular: true,
+    balance: 0,
   },
   {
     id: "usdc",
@@ -59,8 +62,9 @@ const ALL_TOKENS = [
     change24h: 0.01,
     marketCap: 25000000000,
     volume24h: 3000000000,
-    logo: "/usdc-logo.png",
+    logo: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png",
     isPopular: true,
+    balance: 0,
   },
   {
     id: "usdt",
@@ -71,8 +75,22 @@ const ALL_TOKENS = [
     change24h: -0.01,
     marketCap: 95000000000,
     volume24h: 45000000000,
-    logo: "/usdt-logo.png",
+    logo: "https://cryptologos.cc/logos/tether-usdt-logo.png",
     isPopular: true,
+    balance: 0,
+  },
+  {
+    id: "btc",
+    name: "Bitcoin",
+    symbol: "BTC",
+    chain: "bitcoin",
+    price: 67234.56,
+    change24h: 3.45,
+    marketCap: 1300000000000,
+    volume24h: 28000000000,
+    logo: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
+    isPopular: true,
+    balance: 0,
   },
 ]
 

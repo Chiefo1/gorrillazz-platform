@@ -4,7 +4,7 @@ export const GORR_TOKEN = {
   decimals: 18,
   totalSupply: "400000000", // 400 million
   initialWallet: "gorr_assdypat2t",
-  logoUrl: "/gorr-logo.png",
+  logoUrl: "/new-gorr-logo.png", // Updated logo path to use the new GORR logo
   description: "Native stablecoin of the Gorrillazz platform",
   price: 1.0, // $1.00 USD stablecoin
 }
