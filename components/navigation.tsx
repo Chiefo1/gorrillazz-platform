@@ -12,8 +12,8 @@ export default function Navigation() {
   const menuItems = [
     { label: "Home", href: "/" },
     { label: "Token Creator", href: "/create" },
-    { label: "Liquidity Pools", href: "/dashboard" },
-    { label: "Wallet", href: "/dashboard" },
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Wallet", href: "/wallet" }, // Updated to link to wallet page
     { label: "GORR Stablecoin", href: "/#gorr" },
     { label: "Documentation", href: "/#docs" },
     { label: "Contact", href: "/#contact" },

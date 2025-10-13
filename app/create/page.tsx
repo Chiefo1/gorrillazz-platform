@@ -3,6 +3,7 @@
 import { AnimatePresence } from "framer-motion"
 import ShaderBackground from "@/components/shader-background"
 import Navigation from "@/components/navigation"
+import BackButton from "@/components/back-button"
 import { TokenCreatorProvider, useTokenCreator } from "@/lib/token-creator-context"
 import StepIndicator from "@/components/token-wizard/step-indicator"
 import Step1Network from "@/components/token-wizard/step-1-network"
@@ -34,6 +35,7 @@ export default function CreateTokenPage() {
   return (
     <ShaderBackground>
       <Navigation />
+      <BackButton href="/" />
       <TokenCreatorProvider>
         <TokenWizardContent />
       </TokenCreatorProvider>
