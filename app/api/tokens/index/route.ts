@@ -6,26 +6,30 @@ const ALL_TOKENS = [
     name: "Gorrillazz",
     symbol: "GORR",
     chain: "gorrillazz",
-    price: 1.0,
+    price: 1.0, // 1:1 USD peg
     change24h: 0.0,
     marketCap: 400000000,
     volume24h: 5000000,
     logo: "/gorr-logo.png",
     isPopular: true,
     balance: 0,
+    verified: true,
+    type: "stablecoin",
   },
   {
     id: "usdcc",
     name: "USD Coin Custom",
     symbol: "USDCc",
-    chain: "ethereum",
-    price: 1.0,
-    change24h: 0.02,
+    chain: "gorrillazz", // Changed from ethereum to gorrillazz
+    price: 1.0, // 1:1 USD peg
+    change24h: 0.0,
     marketCap: 400000000,
     volume24h: 8000000,
     logo: "/usdcc-logo.png",
     isPopular: true,
     balance: 0,
+    verified: true,
+    type: "stablecoin",
   },
   {
     id: "eth",
@@ -39,6 +43,7 @@ const ALL_TOKENS = [
     logo: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
     isPopular: true,
     balance: 0,
+    verified: true,
   },
   {
     id: "bnb",
@@ -52,6 +57,7 @@ const ALL_TOKENS = [
     logo: "https://cryptologos.cc/logos/bnb-bnb-logo.png",
     isPopular: true,
     balance: 0,
+    verified: true,
   },
   {
     id: "sol",
@@ -65,6 +71,7 @@ const ALL_TOKENS = [
     logo: "https://cryptologos.cc/logos/solana-sol-logo.png",
     isPopular: true,
     balance: 0,
+    verified: true,
   },
   {
     id: "usdc",
@@ -78,6 +85,8 @@ const ALL_TOKENS = [
     logo: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png",
     isPopular: true,
     balance: 0,
+    verified: true,
+    type: "stablecoin",
   },
   {
     id: "usdt",
@@ -91,6 +100,8 @@ const ALL_TOKENS = [
     logo: "https://cryptologos.cc/logos/tether-usdt-logo.png",
     isPopular: true,
     balance: 0,
+    verified: true,
+    type: "stablecoin",
   },
   {
     id: "btc",
@@ -104,6 +115,7 @@ const ALL_TOKENS = [
     logo: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
     isPopular: true,
     balance: 0,
+    verified: true,
   },
 ]
 

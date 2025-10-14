@@ -13,8 +13,9 @@ export default function Navigation() {
     { label: "Home", href: "/" },
     { label: "Token Creator", href: "/create" },
     { label: "Dashboard", href: "/dashboard" },
-    { label: "Wallet", href: "/wallet" }, // Updated to link to wallet page
+    { label: "Wallet", href: "/wallet" },
     { label: "GORR Stablecoin", href: "/#gorr" },
+    { label: "Admin", href: "/admin" },
     { label: "Documentation", href: "/#docs" },
     { label: "Contact", href: "/#contact" },
     { label: "About", href: "/#about" },

@@ -2,23 +2,28 @@ export const GORR_TOKEN = {
   name: "Gorrillazz",
   symbol: "GORR",
   decimals: 18,
-  totalSupply: "400000000", // 400 million
+  totalSupply: 400000000, // Changed from string to number for calculations
   initialWallet: "gorr_assdypat2t",
   logoUrl: "/gorr-logo.png",
   description: "Native stablecoin of the Gorrillazz platform",
-  price: 1.0, // $1.00 USD stablecoin
+  price: 1.0, // $1.00 USD stablecoin (1:1 peg)
+  chain: "gorrillazz",
+  verified: true,
+  type: "stablecoin",
 }
 
 export const USDCC_TOKEN = {
   name: "USD Coin Custom",
   symbol: "USDCc",
   decimals: 6,
-  totalSupply: "400000000", // 400 million
-  initialWallet: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+  totalSupply: 400000000, // Changed from string to number for calculations
+  initialWallet: "gorr_assdypat2t", // Same wallet as GORR on GORR network
   logoUrl: "/usdcc-logo.png",
-  description: "Custom USD Coin on Ethereum network",
-  price: 1.0, // $1.00 USD stablecoin
-  chain: "ethereum",
+  description: "Custom USD Coin on Gorrillazz network",
+  price: 1.0, // $1.00 USD stablecoin (1:1 peg)
+  chain: "gorrillazz", // Changed from ethereum to gorrillazz
+  verified: true,
+  type: "stablecoin",
 }
 
 export const SUPPORTED_CHAINS = [

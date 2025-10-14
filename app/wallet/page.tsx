@@ -344,15 +344,17 @@ export default function WalletPage() {
                       className="p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all border border-white/5 hover:border-white/20"
                     >
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="relative w-8 h-8 rounded-full overflow-hidden bg-white/10">
+                        <div className="relative w-8 h-8 rounded-full overflow-hidden bg-white/10 flex-shrink-0">
                           <Image
-                            src={token.logo || "/placeholder.svg"}
+                            src={token.logo || "/placeholder.svg?height=32&width=32"}
                             alt={token.symbol}
-                            fill
+                            width={32}
+                            height={32}
                             className="object-cover"
+                            unoptimized={token.logo?.startsWith("http")}
                             onError={(e) => {
                               const target = e.target as HTMLImageElement
-                              target.src = "https://via.placeholder.com/32"
+                              target.src = "/placeholder.svg?height=32&width=32&query=" + token.symbol
                             }}
                           />
                         </div>
