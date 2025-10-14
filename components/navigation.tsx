@@ -4,10 +4,12 @@ import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Menu, X } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/router"
 import WalletButton from "./wallet-button"
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const router = useRouter()
 
   const menuItems = [
     { label: "Home", href: "/" },
@@ -20,6 +22,19 @@ export default function Navigation() {
     { label: "Contact", href: "/#contact" },
     { label: "About", href: "/#about" },
   ]
+
+  const handleNavigation = (href: string) => {
+    setIsMenuOpen(false)
+    if (href.startsWith("/#")) {
+      const id = href.substring(2)
+      const element = document.getElementById(id)
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" })
+      }
+    } else {
+      router.push(href)
+    }
+  }
 
   return (
     <>
@@ -47,7 +62,7 @@ export default function Navigation() {
           {/* Hamburger Menu Button */}
           <motion.button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="relative z-50 p-2 text-foreground"
+            className="relative z-50 p-2 text-foreground transition-smooth hover:scale-110"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -122,7 +137,7 @@ export default function Navigation() {
                       ease: [0.22, 1, 0.36, 1],
                     }}
                   >
-                    <Link href={item.href} onClick={() => setIsMenuOpen(false)} className="group relative block">
+                    <button onClick={() => handleNavigation(item.href)} className="group relative block">
                       <motion.span
                         className="text-3xl md:text-5xl font-light text-foreground tracking-wider font-sans"
                         whileHover={{ scale: 1.05, x: 10 }}
@@ -135,7 +150,7 @@ export default function Navigation() {
                         className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 -z-10"
                         transition={{ duration: 0.3 }}
                       />
-                    </Link>
+                    </button>
                   </motion.div>
                 ))}
               </nav>

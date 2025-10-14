@@ -23,6 +23,7 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   Repeat,
+  Send,
 } from "lucide-react"
 import { SUPPORTED_CHAINS } from "@/lib/constants/gorr-token"
 import Image from "next/image"
@@ -35,6 +36,7 @@ export default function WalletPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showImportModal, setShowImportModal] = useState(false)
   const [showTradeModal, setShowTradeModal] = useState(false)
+  const [showSendModal, setShowSendModal] = useState(false)
   const [walletName, setWalletName] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -58,6 +60,10 @@ export default function WalletPage() {
   const [selectedToken, setSelectedToken] = useState<any>(null)
   const [tradeType, setTradeType] = useState<TradeType>("buy")
   const [tradeAmount, setTradeAmount] = useState("")
+
+  const [sendRecipient, setSendRecipient] = useState("")
+  const [sendAmount, setSendAmount] = useState("")
+  const [sendMemo, setSendMemo] = useState("")
 
   useEffect(() => {
     if (isConnected && address) {
@@ -175,6 +181,52 @@ export default function WalletPage() {
     setSelectedToken(token)
     setTradeType(type)
     setShowTradeModal(true)
+  }
+
+  const openSendModal = (token: any) => {
+    setSelectedToken(token)
+    setShowSendModal(true)
+  }
+
+  const handleSendToken = async () => {
+    if (!selectedToken || !sendRecipient || !sendAmount) {
+      alert("Please fill all required fields")
+      return
+    }
+
+    try {
+      setLoading(true)
+      const response = await fetch("/api/wallet/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tokenAddress: selectedToken.contractAddress,
+          fromAddress: address,
+          toAddress: sendRecipient,
+          amount: sendAmount,
+          chain: selectedToken.chain,
+          isNative: selectedToken.isNative || false,
+          decimals: selectedToken.decimals,
+        }),
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        alert(`Transfer successful! TX: ${data.txHash}`)
+        setShowSendModal(false)
+        setSendRecipient("")
+        setSendAmount("")
+        setSendMemo("")
+        await Promise.all([fetchTokens(), fetchBalances(), fetchTrades()])
+      } else {
+        alert(`Transfer failed: ${data.error}`)
+      }
+    } catch (error) {
+      console.error("[v0] Failed to send token:", error)
+      alert("Transfer failed. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   const generateSeedPhrase = () => {
@@ -387,7 +439,7 @@ export default function WalletPage() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-3 gap-1">
+                      <div className="grid grid-cols-4 gap-1">
                         <button
                           onClick={() => openTradeModal(token, "buy")}
                           className="px-2 py-1 text-xs rounded-lg bg-accent/20 hover:bg-accent/30 text-accent transition-colors flex items-center justify-center gap-1"
@@ -408,6 +460,13 @@ export default function WalletPage() {
                         >
                           <Repeat className="w-3 h-3" />
                           Swap
+                        </button>
+                        <button
+                          onClick={() => openSendModal(token)}
+                          className="px-2 py-1 text-xs rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors flex items-center justify-center gap-1"
+                        >
+                          <Send className="w-3 h-3" />
+                          Send
                         </button>
                       </div>
                     </div>
@@ -684,6 +743,100 @@ export default function WalletPage() {
               className="flex-1"
             >
               {loading ? "Processing..." : `Confirm ${tradeType}`}
+            </GlassButton>
+          </div>
+        </div>
+      </GlassModal>
+
+      <GlassModal open={showSendModal} onClose={() => setShowSendModal(false)}>
+        <div>
+          <h2 className="text-2xl font-bold text-foreground mb-6">Send {selectedToken?.symbol}</h2>
+          {selectedToken && (
+            <div className="space-y-4">
+              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="relative w-10 h-10 rounded-full overflow-hidden bg-white/10">
+                    <Image
+                      src={selectedToken.logo || "/placeholder.svg"}
+                      alt={selectedToken.symbol}
+                      width={40}
+                      height={40}
+                      className="object-cover"
+                      unoptimized={selectedToken.logo?.startsWith("http")}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement
+                        target.src = "/placeholder.svg?height=40&width=40"
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">{selectedToken.name}</p>
+                    <p className="text-sm text-muted-foreground">{selectedToken.symbol}</p>
+                  </div>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Available Balance</span>
+                  <span className="font-semibold text-foreground">
+                    {selectedToken.balance || "0"} {selectedToken.symbol}
+                  </span>
+                </div>
+              </div>
+
+              <GlassInput
+                label="Recipient Address"
+                placeholder="Enter wallet address"
+                value={sendRecipient}
+                onChange={(e) => setSendRecipient(e.target.value)}
+              />
+
+              <GlassInput
+                label="Amount"
+                type="number"
+                placeholder="0.00"
+                value={sendAmount}
+                onChange={(e) => setSendAmount(e.target.value)}
+              />
+
+              <GlassInput
+                label="Memo (Optional)"
+                placeholder="Add a note"
+                value={sendMemo}
+                onChange={(e) => setSendMemo(e.target.value)}
+              />
+
+              {sendAmount && (
+                <div className="p-4 rounded-xl bg-primary/10 border border-primary/20">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-muted-foreground">You're sending</span>
+                    <span className="font-semibold text-foreground">
+                      {sendAmount} {selectedToken.symbol}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-xs mb-2">
+                    <span className="text-muted-foreground">Network Fee</span>
+                    <span className="text-muted-foreground">~$2.50</span>
+                  </div>
+                  <div className="flex justify-between text-sm pt-2 border-t border-white/10">
+                    <span className="text-muted-foreground">Total Cost</span>
+                    <span className="font-semibold text-foreground">
+                      {sendAmount} {selectedToken.symbol} + Fee
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="flex gap-3 mt-6">
+            <GlassButton variant="transparent" onClick={() => setShowSendModal(false)} className="flex-1">
+              Cancel
+            </GlassButton>
+            <GlassButton
+              variant="primary"
+              onClick={handleSendToken}
+              disabled={loading || !sendRecipient || !sendAmount}
+              className="flex-1"
+            >
+              {loading ? "Sending..." : "Send"}
             </GlassButton>
           </div>
         </div>

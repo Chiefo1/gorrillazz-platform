@@ -142,3 +142,73 @@ export async function getTokenBalance(
     return "0"
   }
 }
+
+export async function transferToken(
+  tokenAddress: string,
+  fromAddress: string,
+  toAddress: string,
+  amount: string,
+  network: "ethereum" | "bnb",
+): Promise<{ success: boolean; txHash?: string; error?: string }> {
+  try {
+    console.log("[v0] Transferring EVM token:", { tokenAddress, fromAddress, toAddress, amount, network })
+
+    const signer = getSigner(network)
+    const contract = new ethers.Contract(tokenAddress, ERC20_ABI, signer)
+
+    // Get token decimals
+    const decimals = await contract.decimals()
+    const amountInWei = ethers.parseUnits(amount, decimals)
+
+    // Execute transfer
+    const tx = await contract.transfer(toAddress, amountInWei)
+    const receipt = await tx.wait()
+
+    console.log("[v0] Transfer successful:", receipt.hash)
+
+    return {
+      success: true,
+      txHash: receipt.hash,
+    }
+  } catch (error) {
+    console.error("[v0] EVM transfer error:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    }
+  }
+}
+
+export async function transferNative(
+  fromAddress: string,
+  toAddress: string,
+  amount: string,
+  network: "ethereum" | "bnb",
+): Promise<{ success: boolean; txHash?: string; error?: string }> {
+  try {
+    console.log("[v0] Transferring native currency:", { fromAddress, toAddress, amount, network })
+
+    const signer = getSigner(network)
+    const amountInWei = ethers.parseEther(amount)
+
+    const tx = await signer.sendTransaction({
+      to: toAddress,
+      value: amountInWei,
+    })
+
+    const receipt = await tx.wait()
+
+    console.log("[v0] Native transfer successful:", receipt?.hash)
+
+    return {
+      success: true,
+      txHash: receipt?.hash,
+    }
+  } catch (error) {
+    console.error("[v0] Native transfer error:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    }
+  }
+}

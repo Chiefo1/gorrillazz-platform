@@ -7,7 +7,7 @@ import {
   SystemProgram,
   LAMPORTS_PER_SOL,
 } from "@solana/web3.js"
-import { createMint, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_PROGRAM_ID } from "@solana/spl-token"
+import { createMint, getOrCreateAssociatedTokenAccount, mintTo, transfer, TOKEN_PROGRAM_ID } from "@solana/spl-token"
 import bs58 from "bs58"
 
 export interface SolanaTokenConfig {
@@ -128,5 +128,90 @@ export async function getSolanaBalance(walletAddress: string): Promise<number> {
   } catch (error) {
     console.error("[v0] Error fetching Solana balance:", error)
     return 0
+  }
+}
+
+export async function transferSolanaToken(
+  tokenAddress: string,
+  fromAddress: string,
+  toAddress: string,
+  amount: string,
+  decimals: number,
+): Promise<{ success: boolean; txHash?: string; error?: string }> {
+  try {
+    const connection = getSolanaConnection()
+    const payer = getPayerKeypair()
+    const mint = new PublicKey(tokenAddress)
+    const fromPubkey = new PublicKey(fromAddress)
+    const toPubkey = new PublicKey(toAddress)
+
+    console.log("[v0] Transferring Solana token:", { tokenAddress, fromAddress, toAddress, amount })
+
+    // Get or create associated token accounts
+    const fromTokenAccount = await getOrCreateAssociatedTokenAccount(connection, payer, mint, fromPubkey)
+    const toTokenAccount = await getOrCreateAssociatedTokenAccount(connection, payer, mint, toPubkey)
+
+    // Transfer tokens
+    const amountInLamports = BigInt(amount) * BigInt(10 ** decimals)
+    const signature = await transfer(
+      connection,
+      payer,
+      fromTokenAccount.address,
+      toTokenAccount.address,
+      fromPubkey,
+      amountInLamports,
+    )
+
+    console.log("[v0] Solana token transfer successful:", signature)
+
+    return {
+      success: true,
+      txHash: signature,
+    }
+  } catch (error) {
+    console.error("[v0] Solana token transfer error:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    }
+  }
+}
+
+export async function transferSol(
+  fromAddress: string,
+  toAddress: string,
+  amount: string,
+): Promise<{ success: boolean; txHash?: string; error?: string }> {
+  try {
+    const connection = getSolanaConnection()
+    const payer = getPayerKeypair()
+    const toPubkey = new PublicKey(toAddress)
+
+    console.log("[v0] Transferring SOL:", { fromAddress, toAddress, amount })
+
+    const amountInLamports = Number.parseFloat(amount) * LAMPORTS_PER_SOL
+
+    const transaction = new Transaction().add(
+      SystemProgram.transfer({
+        fromPubkey: payer.publicKey,
+        toPubkey: toPubkey,
+        lamports: amountInLamports,
+      }),
+    )
+
+    const signature = await sendAndConfirmTransaction(connection, transaction, [payer])
+
+    console.log("[v0] SOL transfer successful:", signature)
+
+    return {
+      success: true,
+      txHash: signature,
+    }
+  } catch (error) {
+    console.error("[v0] SOL transfer error:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    }
   }
 }
