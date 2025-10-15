@@ -16,6 +16,13 @@ export default function WalletConnectModal({ isOpen, onClose }: WalletConnectMod
 
   const wallets = [
     {
+      id: "gorrillazz" as const,
+      name: "Gorrillazz Wallet",
+      description: "Native Gorrillazz network (Recommended)",
+      icon: "🦍",
+      color: "from-primary to-accent",
+    },
+    {
       id: "trustwallet" as const,
       name: "Trust Wallet",
       description: "Multi-chain mobile wallet",
@@ -35,13 +42,6 @@ export default function WalletConnectModal({ isOpen, onClose }: WalletConnectMod
       description: "Connect to Ethereum & BNB",
       icon: "🦊",
       color: "from-orange-500 to-orange-700",
-    },
-    {
-      id: "gorrillazz" as const,
-      name: "Gorrillazz Wallet",
-      description: "Native Gorrillazz network",
-      icon: "🦍",
-      color: "from-primary to-accent",
     },
   ]
 

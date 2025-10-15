@@ -24,7 +24,7 @@ const WalletContext = createContext<WalletContextType | undefined>(undefined)
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [walletType, setWalletType] = useState<WalletType>(null)
   const [address, setAddress] = useState<string | null>(null)
-  const [chain, setChain] = useState<ChainType | null>(null)
+  const [chain, setChain] = useState<ChainType | null>("gorrillazz")
   const [isConnecting, setIsConnecting] = useState(false)
   const [balance, setBalance] = useState(0)
   const [gorrBalance, setGorrBalance] = useState(0)
@@ -46,14 +46,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const connect = async (type: WalletType) => {
     setIsConnecting(true)
     try {
-      if (type === "trustwallet") {
+      if (type === "gorrillazz") {
+        await connectGorrillazz()
+      } else if (type === "trustwallet") {
         await connectTrustWallet()
       } else if (type === "binance") {
         await connectBinanceWallet()
       } else if (type === "metamask") {
         await connectMetaMask()
-      } else if (type === "gorrillazz") {
-        await connectGorrillazz()
       }
     } catch (error) {
       console.error("Failed to connect wallet:", error)
@@ -78,9 +78,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     const chainMap: Record<string, ChainType> = {
       "0x1": "ethereum",
       "0x38": "bnb",
+      "0x270f": "gorrillazz",
     }
 
-    const detectedChain = chainMap[chainId] || "ethereum"
+    const detectedChain = chainMap[chainId] || "gorrillazz"
 
     setWalletType("trustwallet")
     setAddress(accounts[0])
@@ -126,9 +127,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     const chainMap: Record<string, ChainType> = {
       "0x1": "ethereum",
       "0x38": "bnb",
+      "0x270f": "gorrillazz",
     }
 
-    const detectedChain = chainMap[chainId] || "ethereum"
+    const detectedChain = chainMap[chainId] || "gorrillazz"
 
     setWalletType("metamask")
     setAddress(accounts[0])
@@ -154,7 +156,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const disconnect = () => {
     setWalletType(null)
     setAddress(null)
-    setChain(null)
+    setChain("gorrillazz")
     setBalance(0)
     setGorrBalance(0)
 

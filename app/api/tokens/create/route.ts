@@ -25,12 +25,12 @@ export async function POST(request: NextRequest) {
     let poolResult
 
     switch (tokenData.network) {
-      case "solana":
-        deployResult = await deploySolanaToken(
+      case "gorrillazz":
+        deployResult = await deployGorrillazzToken(
           {
             name: tokenData.name,
             symbol: tokenData.symbol,
-            decimals: tokenData.decimals || 9,
+            decimals: tokenData.decimals || 18,
             totalSupply: tokenData.totalSupply,
             logoUrl: tokenData.logoUrl,
           },
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
         )
 
         if (deployResult.success && tokenData.liquidityAmount && deployResult.contractAddress) {
-          poolResult = await createSolanaLiquidityPool(
+          poolResult = await createGorrillazzLiquidityPool(
             deployResult.contractAddress,
             tokenData.liquidityAmount,
             tokenData.lockPeriod || 0,
@@ -73,12 +73,12 @@ export async function POST(request: NextRequest) {
         }
         break
 
-      case "gorrillazz":
-        deployResult = await deployGorrillazzToken(
+      case "solana":
+        deployResult = await deploySolanaToken(
           {
             name: tokenData.name,
             symbol: tokenData.symbol,
-            decimals: tokenData.decimals || 18,
+            decimals: tokenData.decimals || 9,
             totalSupply: tokenData.totalSupply,
             logoUrl: tokenData.logoUrl,
           },
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
         )
 
         if (deployResult.success && tokenData.liquidityAmount && deployResult.contractAddress) {
-          poolResult = await createGorrillazzLiquidityPool(
+          poolResult = await createSolanaLiquidityPool(
             deployResult.contractAddress,
             tokenData.liquidityAmount,
             tokenData.lockPeriod || 0,

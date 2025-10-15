@@ -8,11 +8,11 @@ import { Check } from "lucide-react"
 
 const networks = [
   {
-    id: "solana" as ChainType,
-    name: "Solana",
-    description: "Fast, low-cost SPL tokens",
-    icon: "◎",
-    color: "from-purple-500 to-purple-700",
+    id: "gorrillazz" as ChainType,
+    name: "Gorrillazz",
+    description: "Native network tokens (Primary)",
+    icon: "🦍",
+    color: "from-primary to-accent",
   },
   {
     id: "ethereum" as ChainType,
@@ -29,11 +29,11 @@ const networks = [
     color: "from-yellow-500 to-yellow-700",
   },
   {
-    id: "gorrillazz" as ChainType,
-    name: "Gorrillazz",
-    description: "Native network tokens",
-    icon: "🦍",
-    color: "from-primary to-accent",
+    id: "solana" as ChainType,
+    name: "Solana",
+    description: "Fast, low-cost SPL tokens",
+    icon: "◎",
+    color: "from-purple-500 to-purple-700",
   },
 ]
 
@@ -59,6 +59,7 @@ export default function Step1Network() {
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-foreground mb-2">Choose Networks</h2>
         <p className="text-muted-foreground">Select one or more blockchains to deploy your token</p>
+        <p className="text-sm text-primary mt-2">💡 Recommended: Start with Gorrillazz network</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
