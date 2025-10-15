@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 
-export type WalletType = "phantom" | "metamask" | "gorrillazz" | null
+export type WalletType = "trustwallet" | "binance" | "metamask" | "gorrillazz" | null
 export type ChainType = "solana" | "ethereum" | "bnb" | "gorrillazz"
 
 interface WalletContextType {
@@ -46,8 +46,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const connect = async (type: WalletType) => {
     setIsConnecting(true)
     try {
-      if (type === "phantom") {
-        await connectPhantom()
+      if (type === "trustwallet") {
+        await connectTrustWallet()
+      } else if (type === "binance") {
+        await connectBinanceWallet()
       } else if (type === "metamask") {
         await connectMetaMask()
       } else if (type === "gorrillazz") {
@@ -61,25 +63,52 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const connectPhantom = async () => {
+  const connectTrustWallet = async () => {
     if (typeof window === "undefined") return
 
-    const { solana } = window as any
-    if (!solana?.isPhantom) {
-      window.open("https://phantom.app/", "_blank")
-      throw new Error("Phantom wallet not installed")
+    const { ethereum } = window as any
+    if (!ethereum?.isTrust) {
+      window.open("https://trustwallet.com/", "_blank")
+      throw new Error("Trust Wallet not installed")
     }
 
-    const response = await solana.connect()
-    const pubKey = response.publicKey.toString()
+    const accounts = await ethereum.request({ method: "eth_requestAccounts" })
+    const chainId = await ethereum.request({ method: "eth_chainId" })
 
-    setWalletType("phantom")
-    setAddress(pubKey)
-    setChain("solana")
+    const chainMap: Record<string, ChainType> = {
+      "0x1": "ethereum",
+      "0x38": "bnb",
+    }
 
-    localStorage.setItem("gorrillazz_wallet", "phantom")
-    localStorage.setItem("gorrillazz_address", pubKey)
-    localStorage.setItem("gorrillazz_chain", "solana")
+    const detectedChain = chainMap[chainId] || "ethereum"
+
+    setWalletType("trustwallet")
+    setAddress(accounts[0])
+    setChain(detectedChain)
+
+    localStorage.setItem("gorrillazz_wallet", "trustwallet")
+    localStorage.setItem("gorrillazz_address", accounts[0])
+    localStorage.setItem("gorrillazz_chain", detectedChain)
+  }
+
+  const connectBinanceWallet = async () => {
+    if (typeof window === "undefined") return
+
+    const { BinanceChain } = window as any
+    if (!BinanceChain) {
+      window.open("https://www.binance.com/en/wallet-direct", "_blank")
+      throw new Error("Binance Wallet not installed")
+    }
+
+    const accounts = await BinanceChain.request({ method: "eth_requestAccounts" })
+
+    setWalletType("binance")
+    setAddress(accounts[0])
+    setChain("bnb")
+
+    localStorage.setItem("gorrillazz_wallet", "binance")
+    localStorage.setItem("gorrillazz_address", accounts[0])
+    localStorage.setItem("gorrillazz_chain", "bnb")
   }
 
   const connectMetaMask = async () => {

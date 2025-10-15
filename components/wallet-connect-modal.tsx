@@ -16,11 +16,18 @@ export default function WalletConnectModal({ isOpen, onClose }: WalletConnectMod
 
   const wallets = [
     {
-      id: "phantom" as const,
-      name: "Phantom",
-      description: "Connect to Solana network",
-      icon: "👻",
-      color: "from-purple-500 to-purple-700",
+      id: "trustwallet" as const,
+      name: "Trust Wallet",
+      description: "Multi-chain mobile wallet",
+      icon: "🛡️",
+      color: "from-blue-500 to-blue-700",
+    },
+    {
+      id: "binance" as const,
+      name: "Binance Wallet",
+      description: "Connect to Binance ecosystem",
+      icon: "🟡",
+      color: "from-yellow-500 to-yellow-700",
     },
     {
       id: "metamask" as const,

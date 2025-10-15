@@ -90,11 +90,17 @@ export default function WalletButton() {
           )}
         </DropdownMenuItem>
         <DropdownMenuSeparator className="bg-white/10" />
+        <DropdownMenuItem onClick={() => setIsLoginModalOpen(true)} className="cursor-pointer">
+          <LogIn className="w-4 h-4 mr-2" />
+          Login to Wallet
+        </DropdownMenuItem>
+        <DropdownMenuSeparator className="bg-white/10" />
         <DropdownMenuItem onClick={disconnect} className="cursor-pointer text-destructive">
           <LogOut className="w-4 h-4 mr-2" />
           Disconnect
         </DropdownMenuItem>
       </DropdownMenuContent>
+      <WalletConnectModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
     </DropdownMenu>
   )
 }

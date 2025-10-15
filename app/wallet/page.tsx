@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import ShaderBackground from "@/components/shader-background"
+import GL from "@/components/gl"
 import Navigation from "@/components/navigation"
 import BackButton from "@/components/back-button"
 import GlassCard from "@/components/glass/glass-card"
@@ -24,6 +24,7 @@ import {
   ArrowDownLeft,
   Repeat,
   Send,
+  LogIn,
 } from "lucide-react"
 import { SUPPORTED_CHAINS } from "@/lib/constants/gorr-token"
 import Image from "next/image"
@@ -293,7 +294,7 @@ export default function WalletPage() {
   }
 
   return (
-    <ShaderBackground>
+    <GL>
       <Navigation />
       <BackButton href="/" />
 
@@ -520,13 +521,11 @@ export default function WalletPage() {
               </GlassCard>
 
               <div className="text-center">
-                <p className="text-muted-foreground mb-4">Or connect an existing wallet</p>
+                <p className="text-muted-foreground mb-4">Or login to existing wallet</p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <GlassButton variant="default" size="md">
-                    Connect Phantom
-                  </GlassButton>
-                  <GlassButton variant="default" size="md">
-                    Connect MetaMask
+                  <GlassButton variant="default" size="md" onClick={() => setShowImportModal(true)}>
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Login to Wallet
                   </GlassButton>
                 </div>
               </div>
@@ -841,6 +840,6 @@ export default function WalletPage() {
           </div>
         </div>
       </GlassModal>
-    </ShaderBackground>
+    </GL>
   )
 }

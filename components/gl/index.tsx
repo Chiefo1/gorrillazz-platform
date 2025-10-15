@@ -39,3 +39,5 @@ export const GL = ({ hovering = false }: { hovering?: boolean }) => {
     </div>
   )
 }
+
+export default GL

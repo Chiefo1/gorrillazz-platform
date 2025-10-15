@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import ShaderBackground from "@/components/shader-background"
+import GL from "@/components/gl"
 import Navigation from "@/components/navigation"
 import BackButton from "@/components/back-button"
 import GlassCard from "@/components/glass/glass-card"
@@ -86,19 +86,21 @@ export default function TokenDetailsPage() {
 
   if (isLoading) {
     return (
-      <ShaderBackground>
+      <div className="relative min-h-screen">
+        <GL hovering={false} />
         <Navigation />
         <BackButton href="/dashboard" />
         <div className="min-h-screen flex items-center justify-center">
           <p className="text-muted-foreground">Loading token details...</p>
         </div>
-      </ShaderBackground>
+      </div>
     )
   }
 
   if (!token) {
     return (
-      <ShaderBackground>
+      <div className="relative min-h-screen">
+        <GL hovering={false} />
         <Navigation />
         <BackButton href="/dashboard" />
         <div className="min-h-screen flex items-center justify-center">
@@ -106,12 +108,13 @@ export default function TokenDetailsPage() {
             <p className="text-muted-foreground">Token not found</p>
           </div>
         </div>
-      </ShaderBackground>
+      </div>
     )
   }
 
   return (
-    <ShaderBackground>
+    <div className="relative min-h-screen">
+      <GL hovering={false} />
       <Navigation />
       <BackButton href="/dashboard" />
       <div className="min-h-screen p-4 md:p-8 pt-32">
@@ -278,6 +281,6 @@ export default function TokenDetailsPage() {
           </div>
         </div>
       </div>
-    </ShaderBackground>
+    </div>
   )
 }

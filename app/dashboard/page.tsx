@@ -3,7 +3,7 @@
 import { useWallet } from "@/lib/wallet-context"
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import AnimatedBackground from "@/components/animated-background"
+import GL from "@/components/gl"
 import Navigation from "@/components/navigation"
 import BackButton from "@/components/back-button"
 import GlassCard from "@/components/glass/glass-card"
@@ -59,7 +59,7 @@ export default function DashboardPage() {
   if (!isConnected) {
     return (
       <>
-        <AnimatedBackground />
+        <GL hovering={false} />
         <Navigation />
         <BackButton href="/" />
         <div className="min-h-screen flex items-center justify-center p-4">
@@ -88,7 +88,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <AnimatedBackground />
+      <GL hovering={false} />
       <Navigation />
       <BackButton href="/" />
       <div className="min-h-screen p-4 md:p-8 pt-32">

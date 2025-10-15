@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import AnimatedBackground from "@/components/animated-background"
+import GL from "@/components/gl"
 import Navigation from "@/components/navigation"
 import BackButton from "@/components/back-button"
 import { GlassCard, GlassButton, GlassInput } from "@/components/glass"
@@ -132,7 +132,7 @@ export default function AdminPage() {
   if (!isAuthenticated) {
     return (
       <>
-        <AnimatedBackground />
+        <GL hovering={false} />
         <Navigation />
         <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
           <BackButton />
@@ -186,7 +186,7 @@ export default function AdminPage() {
 
   return (
     <>
-      <AnimatedBackground />
+      <GL hovering={false} />
       <Navigation />
       <div className="relative z-10 min-h-screen px-4 py-20">
         <BackButton />
