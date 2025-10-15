@@ -2,16 +2,14 @@
 
 import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
-import { GL } from "@/components/gl"
-import { Header } from "@/components/header"
+import ShaderBackground from "@/components/shader-background"
+import Navigation from "@/components/navigation"
 import GorrBadge from "@/components/gorr-badge"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Zap, Shield, Globe, Coins, Wallet } from "lucide-react"
 
 export default function HomePage() {
   const router = useRouter()
-  const [hovering, setHovering] = useState(false)
 
   const features = [
     {
@@ -53,13 +51,11 @@ export default function HomePage() {
   }
 
   return (
-    <>
-      <GL hovering={hovering} />
-
-      <Header />
+    <ShaderBackground>
+      <Navigation />
 
       {/* Hero Section */}
-      <main className="relative z-10 min-h-screen flex items-center justify-center px-6">
+      <main className="relative min-h-screen flex items-center justify-center px-6">
         <div className="max-w-5xl mx-auto text-center pt-20">
           {/* Main Heading */}
           <motion.h1
@@ -147,6 +143,6 @@ export default function HomePage() {
 
       {/* GORR Badge */}
       <GorrBadge />
-    </>
+    </ShaderBackground>
   )
 }
