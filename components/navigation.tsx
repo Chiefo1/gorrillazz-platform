@@ -4,7 +4,7 @@ import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Menu, X } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/router"
+import { useRouter } from "next/navigation"
 import WalletButton from "./wallet-button"
 
 export default function Navigation() {
@@ -17,8 +17,8 @@ export default function Navigation() {
     { label: "Dashboard", href: "/dashboard" },
     { label: "Wallet", href: "/wallet" },
     { label: "GORR Stablecoin", href: "/#gorr" },
-    { label: "Admin", href: "/admin" },
     { label: "Documentation", href: "/#docs" },
+    { label: "Admin", href: "/admin" },
     { label: "Contact", href: "/#contact" },
     { label: "About", href: "/#about" },
   ]

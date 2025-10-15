@@ -4,11 +4,12 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import ShaderBackground from "@/components/shader-background"
+import AnimatedBackground from "@/components/animated-background"
 import Navigation from "@/components/navigation"
 import BackButton from "@/components/back-button"
 import { GlassCard, GlassButton, GlassInput } from "@/components/glass"
 import { motion } from "framer-motion"
+import { useWallet } from "@/lib/wallet-context"
 
 interface PendingToken {
   chainId: number
@@ -23,14 +24,23 @@ interface PendingToken {
   }
 }
 
+const ADMIN_WALLET = "gorr_admin_wallet_2024"
+
 export default function AdminPage() {
   const router = useRouter()
+  const { address, isConnected } = useWallet()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [pendingTokens, setPendingTokens] = useState<PendingToken[]>([])
+
+  useEffect(() => {
+    if (isConnected && address === ADMIN_WALLET) {
+      setIsAuthenticated(true)
+    }
+  }, [isConnected, address])
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -46,7 +56,7 @@ export default function AdminPage() {
         setPendingTokens(data.tokens)
       }
     } catch (error) {
-      console.error("Failed to fetch pending tokens:", error)
+      console.error("[v0] Failed to fetch pending tokens:", error)
     }
   }
 
@@ -83,7 +93,7 @@ export default function AdminPage() {
       setUsername("")
       setPassword("")
     } catch (error) {
-      console.error("Logout failed:", error)
+      console.error("[v0] Logout failed:", error)
     }
   }
 
@@ -99,7 +109,7 @@ export default function AdminPage() {
         fetchPendingTokens()
       }
     } catch (error) {
-      console.error("Approval failed:", error)
+      console.error("[v0] Approval failed:", error)
     }
   }
 
@@ -115,21 +125,24 @@ export default function AdminPage() {
         fetchPendingTokens()
       }
     } catch (error) {
-      console.error("Rejection failed:", error)
+      console.error("[v0] Rejection failed:", error)
     }
   }
 
   if (!isAuthenticated) {
     return (
       <>
-        <ShaderBackground />
+        <AnimatedBackground />
         <Navigation />
         <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
           <BackButton />
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
             <GlassCard className="p-8">
               <h1 className="text-3xl font-bold text-white mb-2 text-center">Admin Login</h1>
-              <p className="text-white/60 text-center mb-8">Access the Gorrillazz admin dashboard</p>
+              <p className="text-white/60 text-center mb-8">
+                Access the Gorrillazz admin dashboard
+                {isConnected && <span className="block mt-2 text-sm">Connected wallet: {address}</span>}
+              </p>
 
               <form onSubmit={handleLogin} className="space-y-6">
                 <div>
@@ -173,7 +186,7 @@ export default function AdminPage() {
 
   return (
     <>
-      <ShaderBackground />
+      <AnimatedBackground />
       <Navigation />
       <div className="relative z-10 min-h-screen px-4 py-20">
         <BackButton />
@@ -181,7 +194,10 @@ export default function AdminPage() {
           <div className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-4xl font-bold text-white mb-2">Admin Dashboard</h1>
-              <p className="text-white/60">Manage token verifications and registrations</p>
+              <p className="text-white/60">
+                Manage token verifications and registrations
+                <span className="block mt-1 text-sm">Admin Wallet: {ADMIN_WALLET}</span>
+              </p>
             </div>
             <GlassButton onClick={handleLogout}>Logout</GlassButton>
           </div>

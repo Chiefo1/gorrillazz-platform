@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
-import ShaderBackground from "@/components/shader-background"
+import { GL } from "@/components/gl"
 import Navigation from "@/components/navigation"
 import GorrBadge from "@/components/gorr-badge"
 import { Button } from "@/components/ui/button"
@@ -42,22 +42,14 @@ export default function HomePage() {
     router.push("/wallet")
   }
 
-  const handleViewDocs = () => {
-    // Scroll to docs section or navigate to docs page
-    const docsSection = document.getElementById("docs")
-    if (docsSection) {
-      docsSection.scrollIntoView({ behavior: "smooth" })
-    }
-  }
-
   return (
-    <ShaderBackground>
+    <>
+      <GL hovering={false} />
       <Navigation />
 
       {/* Hero Section */}
-      <main className="relative min-h-screen flex items-center justify-center px-6">
+      <main className="relative min-h-screen flex items-center justify-center px-6 z-10">
         <div className="max-w-5xl mx-auto text-center pt-20">
-          {/* Main Heading */}
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -71,7 +63,6 @@ export default function HomePage() {
             </span>
           </motion.h1>
 
-          {/* Description */}
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -82,7 +73,6 @@ export default function HomePage() {
             GORR. All in one platform.
           </motion.p>
 
-          {/* CTA Buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -105,17 +95,8 @@ export default function HomePage() {
               <Wallet className="mr-2 group-hover:scale-110 transition-transform duration-300" />
               Create Wallet
             </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={handleViewDocs}
-              className="glass border-white/20 text-foreground px-8 py-6 text-lg rounded-2xl hover:bg-white/10 bg-transparent transition-all duration-300"
-            >
-              View Documentation
-            </Button>
           </motion.div>
 
-          {/* Feature Grid */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
@@ -141,8 +122,7 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* GORR Badge */}
       <GorrBadge />
-    </ShaderBackground>
+    </>
   )
 }

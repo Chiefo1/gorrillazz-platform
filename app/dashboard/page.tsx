@@ -3,13 +3,14 @@
 import { useWallet } from "@/lib/wallet-context"
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import ShaderBackground from "@/components/shader-background"
+import AnimatedBackground from "@/components/animated-background"
 import Navigation from "@/components/navigation"
 import BackButton from "@/components/back-button"
 import GlassCard from "@/components/glass/glass-card"
 import GlassButton from "@/components/glass/glass-button"
 import { Coins, TrendingUp, Wallet, Plus, ExternalLink, Copy, Check } from "lucide-react"
 import Link from "next/link"
+import WalletConnectModal from "@/components/wallet-connect-modal"
 
 interface Token {
   id: string
@@ -27,6 +28,7 @@ export default function DashboardPage() {
   const [tokens, setTokens] = useState<Token[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null)
+  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false)
 
   useEffect(() => {
     if (isConnected && address) {
@@ -56,7 +58,8 @@ export default function DashboardPage() {
 
   if (!isConnected) {
     return (
-      <ShaderBackground>
+      <>
+        <AnimatedBackground />
         <Navigation />
         <BackButton href="/" />
         <div className="min-h-screen flex items-center justify-center p-4">
@@ -72,14 +75,20 @@ export default function DashboardPage() {
             <p className="text-muted-foreground">
               Please connect your wallet to view your dashboard and manage your tokens.
             </p>
+            <GlassButton variant="primary" size="lg" onClick={() => setIsWalletModalOpen(true)}>
+              <Wallet className="w-4 h-4 mr-2" />
+              Connect Wallet
+            </GlassButton>
           </motion.div>
         </div>
-      </ShaderBackground>
+        <WalletConnectModal isOpen={isWalletModalOpen} onClose={() => setIsWalletModalOpen(false)} />
+      </>
     )
   }
 
   return (
-    <ShaderBackground>
+    <>
+      <AnimatedBackground />
       <Navigation />
       <BackButton href="/" />
       <div className="min-h-screen p-4 md:p-8 pt-32">
@@ -236,6 +245,6 @@ export default function DashboardPage() {
           </motion.div>
         </div>
       </div>
-    </ShaderBackground>
+    </>
   )
 }

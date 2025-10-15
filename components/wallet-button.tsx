@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Wallet, ChevronDown, LogOut, Copy, Check } from "lucide-react"
+import { Wallet, ChevronDown, LogOut, Copy, Check, LogIn } from "lucide-react"
 import { useWallet } from "@/lib/wallet-context"
 import { Button } from "@/components/ui/button"
 import WalletConnectModal from "./wallet-connect-modal"
@@ -16,6 +16,7 @@ import {
 export default function WalletButton() {
   const { isConnected, address, chain, disconnect } = useWallet()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [copied, setCopied] = useState(false)
 
   const formatAddress = (addr: string) => {
@@ -43,11 +44,18 @@ export default function WalletButton() {
   if (!isConnected) {
     return (
       <>
-        <Button onClick={() => setIsModalOpen(true)} variant="ghost" size="sm" className="text-foreground">
-          <Wallet className="w-4 h-4 mr-2" />
-          Connect Wallet
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setIsLoginModalOpen(true)} variant="ghost" size="sm" className="text-foreground">
+            <LogIn className="w-4 h-4 mr-2" />
+            Login
+          </Button>
+          <Button onClick={() => setIsModalOpen(true)} variant="ghost" size="sm" className="text-foreground">
+            <Wallet className="w-4 h-4 mr-2" />
+            Connect Wallet
+          </Button>
+        </div>
         <WalletConnectModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+        <WalletConnectModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
       </>
     )
   }
