@@ -4,8 +4,8 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import ShaderBackground from "@/components/shader-background"
-import Navigation from "@/components/navigation"
+import { GL } from "@/components/gl"
+import { Header } from "@/components/header"
 import BackButton from "@/components/back-button"
 import { GlassCard, GlassButton, GlassInput } from "@/components/glass"
 import { motion } from "framer-motion"
@@ -24,6 +24,7 @@ interface PendingToken {
 }
 
 export default function AdminPage() {
+  const [hovering, setHovering] = useState(false)
   const router = useRouter()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [username, setUsername] = useState("")
@@ -122,8 +123,8 @@ export default function AdminPage() {
   if (!isAuthenticated) {
     return (
       <>
-        <ShaderBackground />
-        <Navigation />
+        <GL hovering={hovering} />
+        <Header />
         <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
           <BackButton />
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
@@ -173,8 +174,8 @@ export default function AdminPage() {
 
   return (
     <>
-      <ShaderBackground />
-      <Navigation />
+      <GL hovering={hovering} />
+      <Header />
       <div className="relative z-10 min-h-screen px-4 py-20">
         <BackButton />
         <div className="max-w-7xl mx-auto">

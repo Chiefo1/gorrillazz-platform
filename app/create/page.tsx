@@ -1,8 +1,9 @@
 "use client"
 
+import { useState } from "react"
 import { AnimatePresence } from "framer-motion"
-import ShaderBackground from "@/components/shader-background"
-import Navigation from "@/components/navigation"
+import { GL } from "@/components/gl"
+import { Header } from "@/components/header"
 import BackButton from "@/components/back-button"
 import { TokenCreatorProvider, useTokenCreator } from "@/lib/token-creator-context"
 import StepIndicator from "@/components/token-wizard/step-indicator"
@@ -32,13 +33,18 @@ function TokenWizardContent() {
 }
 
 export default function CreateTokenPage() {
+  const [hovering, setHovering] = useState(false)
+
   return (
-    <ShaderBackground>
-      <Navigation />
-      <BackButton href="/" />
-      <TokenCreatorProvider>
-        <TokenWizardContent />
-      </TokenCreatorProvider>
-    </ShaderBackground>
+    <>
+      <GL hovering={hovering} />
+      <Header />
+      <div className="relative z-10">
+        <BackButton href="/" />
+        <TokenCreatorProvider>
+          <TokenWizardContent />
+        </TokenCreatorProvider>
+      </div>
+    </>
   )
 }
