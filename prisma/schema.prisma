@@ -68,13 +68,21 @@ model Transaction {
   user            User      @relation(fields: [userId], references: [id])
   tokenId         String?
   token           Token?    @relation(fields: [tokenId], references: [id])
-  type            String    // deploy, transfer, swap, liquidity_add, liquidity_remove
+  type            String    // deploy, transfer, swap, liquidity_add, liquidity_remove, deposit, withdrawal
   amount          String?
   fromAddress     String?
   toAddress       String?
   txHash          String?   @unique
   network         String
-  status          String    @default("pending") // pending, confirmed, failed
+  status          String    @default("pending") // pending, confirmed, failed, revoked
+  paymentProvider String?   // revolut, stripe, paypal, card
+  paymentMethod   String?   // deposit, withdrawal
+  fiatAmount      Float?
+  fiatCurrency    String?
+  fee             Float?
+  netAmount       Float?
+  revokedAt       DateTime?
+  revokeReason    String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }

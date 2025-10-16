@@ -25,12 +25,16 @@ import {
   Repeat,
   Send,
   LogIn,
+  CreditCard,
+  DollarSign,
 } from "lucide-react"
 import { SUPPORTED_CHAINS } from "@/lib/constants/gorr-token"
+import { PAYMENT_PROVIDERS } from "@/lib/payment-providers"
 import Image from "next/image"
 
 type ViewMode = "tokens" | "coins"
 type TradeType = "buy" | "sell" | "trade"
+type PaymentModalType = "deposit" | "withdraw" | null
 
 export default function WalletPage() {
   const { address, chain, balance, gorrBalance, isConnected, disconnect } = useWallet()
@@ -65,6 +69,13 @@ export default function WalletPage() {
   const [sendRecipient, setSendRecipient] = useState("")
   const [sendAmount, setSendAmount] = useState("")
   const [sendMemo, setSendMemo] = useState("")
+
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [paymentType, setPaymentType] = useState<PaymentModalType>(null)
+  const [selectedProvider, setSelectedProvider] = useState("revolut")
+  const [paymentAmount, setPaymentAmount] = useState("")
+  const [paymentCurrency, setPaymentCurrency] = useState("USD")
+  const [withdrawDestination, setWithdrawDestination] = useState("")
 
   useEffect(() => {
     if (isConnected && address) {
@@ -293,6 +304,78 @@ export default function WalletPage() {
     setSelectedChain(chainId)
   }
 
+  const handleDeposit = async () => {
+    if (!paymentAmount || !selectedToken) return
+
+    try {
+      setLoading(true)
+      const response = await fetch("/api/payment/deposit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          walletAddress: address,
+          provider: selectedProvider,
+          amount: Number.parseFloat(paymentAmount),
+          currency: paymentCurrency,
+          token: selectedToken.symbol,
+        }),
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        alert(`Deposit successful! You will receive ${data.transaction.amount} ${selectedToken.symbol}`)
+        setShowPaymentModal(false)
+        setPaymentAmount("")
+        await fetchBalances()
+      }
+    } catch (error) {
+      console.error("[v0] Deposit failed:", error)
+      alert("Deposit failed. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleWithdraw = async () => {
+    if (!paymentAmount || !selectedToken || !withdrawDestination) return
+
+    try {
+      setLoading(true)
+      const response = await fetch("/api/payment/withdraw", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          walletAddress: address,
+          provider: selectedProvider,
+          amount: Number.parseFloat(paymentAmount),
+          currency: paymentCurrency,
+          token: selectedToken.symbol,
+          destination: withdrawDestination,
+        }),
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        alert(`Withdrawal initiated! You will receive $${data.transaction.amount} ${paymentCurrency}`)
+        setShowPaymentModal(false)
+        setPaymentAmount("")
+        setWithdrawDestination("")
+        await fetchBalances()
+      }
+    } catch (error) {
+      console.error("[v0] Withdrawal failed:", error)
+      alert("Withdrawal failed. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const openPaymentModal = (token: any, type: "deposit" | "withdraw") => {
+    setSelectedToken(token)
+    setPaymentType(type)
+    setShowPaymentModal(true)
+  }
+
   return (
     <GL>
       <Navigation />
@@ -470,6 +553,25 @@ export default function WalletPage() {
                           Send
                         </button>
                       </div>
+
+                      {(token.symbol === "GORR" || token.symbol === "USDCc") && (
+                        <div className="grid grid-cols-2 gap-1 pt-2 border-t border-white/10">
+                          <button
+                            onClick={() => openPaymentModal(token, "deposit")}
+                            className="px-2 py-1 text-xs rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400 transition-colors flex items-center justify-center gap-1"
+                          >
+                            <CreditCard className="w-3 h-3" />
+                            Buy with Fiat
+                          </button>
+                          <button
+                            onClick={() => openPaymentModal(token, "withdraw")}
+                            className="px-2 py-1 text-xs rounded-lg bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 transition-colors flex items-center justify-center gap-1"
+                          >
+                            <DollarSign className="w-3 h-3" />
+                            Withdraw
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -808,7 +910,7 @@ export default function WalletPage() {
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-muted-foreground">You're sending</span>
                     <span className="font-semibold text-foreground">
-                      {sendAmount} {selectedToken.symbol}
+                      {sendAmount} {selectedToken.symbol} + Fee
                     </span>
                   </div>
                   <div className="flex justify-between text-xs mb-2">
@@ -836,6 +938,101 @@ export default function WalletPage() {
               className="flex-1"
             >
               {loading ? "Sending..." : "Send"}
+            </GlassButton>
+          </div>
+        </div>
+      </GlassModal>
+
+      <GlassModal open={showPaymentModal} onClose={() => setShowPaymentModal(false)}>
+        <div>
+          <h2 className="text-2xl font-bold text-foreground mb-6 capitalize">
+            {paymentType === "deposit" ? "Buy" : "Withdraw"} {selectedToken?.symbol}
+          </h2>
+          {selectedToken && (
+            <div className="space-y-4">
+              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="relative w-10 h-10 rounded-full overflow-hidden bg-white/10">
+                    <Image
+                      src={selectedToken.logo || "/placeholder.svg"}
+                      alt={selectedToken.symbol}
+                      width={40}
+                      height={40}
+                      className="object-cover"
+                      unoptimized={selectedToken.logo?.startsWith("http")}
+                    />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">{selectedToken.name}</p>
+                    <p className="text-sm text-muted-foreground">{selectedToken.symbol}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-2">Payment Provider</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {PAYMENT_PROVIDERS.map((provider) => (
+                    <GlassButton
+                      key={provider.id}
+                      variant={selectedProvider === provider.id ? "primary" : "transparent"}
+                      size="sm"
+                      onClick={() => setSelectedProvider(provider.id)}
+                    >
+                      {provider.name}
+                    </GlassButton>
+                  ))}
+                </div>
+              </div>
+
+              <GlassInput
+                label={paymentType === "deposit" ? "Amount (USD)" : `Amount (${selectedToken.symbol})`}
+                type="number"
+                placeholder="0.00"
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+              />
+
+              {paymentType === "withdraw" && (
+                <GlassInput
+                  label="Destination (Email/Account)"
+                  placeholder="your@email.com"
+                  value={withdrawDestination}
+                  onChange={(e) => setWithdrawDestination(e.target.value)}
+                />
+              )}
+
+              {paymentAmount && (
+                <div className="p-4 rounded-xl bg-primary/10 border border-primary/20">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-muted-foreground">
+                      {paymentType === "deposit" ? "You will receive" : "You will get"}
+                    </span>
+                    <span className="font-semibold text-foreground">
+                      {paymentType === "deposit"
+                        ? `~${(Number.parseFloat(paymentAmount) * 0.97).toFixed(2)} ${selectedToken.symbol}`
+                        : `~$${(Number.parseFloat(paymentAmount) * selectedToken.price * 0.98).toFixed(2)}`}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Provider Fee</span>
+                    <span className="text-muted-foreground">~{paymentType === "deposit" ? "3%" : "2%"}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="flex gap-3 mt-6">
+            <GlassButton variant="transparent" onClick={() => setShowPaymentModal(false)} className="flex-1">
+              Cancel
+            </GlassButton>
+            <GlassButton
+              variant="primary"
+              onClick={paymentType === "deposit" ? handleDeposit : handleWithdraw}
+              disabled={loading || !paymentAmount || (paymentType === "withdraw" && !withdrawDestination)}
+              className="flex-1"
+            >
+              {loading ? "Processing..." : `Confirm ${paymentType === "deposit" ? "Purchase" : "Withdrawal"}`}
             </GlassButton>
           </div>
         </div>
