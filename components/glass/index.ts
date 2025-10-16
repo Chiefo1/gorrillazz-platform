@@ -1,6 +1,3 @@
-// Liquid Glass UI Kit - Gorrillazz Edition 🌌
-// All components auto-adapt to your global theme (OKLCH + Tailwind + blur system)
-
 import GlassButton from "./glass-button"
 import GlassCard from "./glass-card"
 import GlassModal from "./glass-modal"

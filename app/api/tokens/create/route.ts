@@ -2,7 +2,6 @@ import { type NextRequest, NextResponse } from "next/server"
 import { deploySolanaToken, createSolanaLiquidityPool } from "@/lib/blockchain/solana"
 import { deployEthereumToken, createEthereumLiquidityPool } from "@/lib/blockchain/ethereum"
 import { deployGorrillazzToken, createGorrillazzLiquidityPool } from "@/lib/blockchain/gorrillazz"
-import { getCollection, Collections, type TokenDocument, type LiquidityPoolDocument } from "@/lib/db-mongo"
 
 export async function POST(request: NextRequest) {
   try {

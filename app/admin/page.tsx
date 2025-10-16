@@ -273,15 +273,16 @@ export default function AdminPage() {
                   <GlassInput
                     type="text"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
                     placeholder="Enter username"
                     required
                   />
                 </div>
-
                 <div>
                   <label className="block text-white/80 text-sm font-medium mb-2">Password</label>
                   <GlassInput
+                    label="Password"
+                    className=""
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -296,7 +297,7 @@ export default function AdminPage() {
                   </div>
                 )}
 
-                <GlassButton type="submit" disabled={loading} className="w-full">
+                <GlassButton type="submit" disabled={loading} className="w-full" onClick={() => {}}>
                   {loading ? "Logging in..." : "Login"}
                 </GlassButton>
               </form>
@@ -322,25 +323,28 @@ export default function AdminPage() {
                 <span className="block mt-1 text-sm">Admin Wallet: {ADMIN_WALLET}</span>
               </p>
             </div>
-            <GlassButton onClick={handleLogout}>Logout</GlassButton>
+            <GlassButton onClick={handleLogout} className="" disabled={false}>Logout</GlassButton>
           </div>
 
           <div className="flex gap-2 mb-6">
             <GlassButton
               onClick={() => setActiveTab("wallet")}
               className={activeTab === "wallet" ? "bg-purple-500/30" : ""}
+              disabled={false}
             >
               Wallet & Payments
             </GlassButton>
             <GlassButton
               onClick={() => setActiveTab("exchange")}
               className={activeTab === "exchange" ? "bg-purple-500/30" : ""}
+              disabled={false}
             >
               Exchange & Liquidity
             </GlassButton>
             <GlassButton
               onClick={() => setActiveTab("tokens")}
               className={activeTab === "tokens" ? "bg-purple-500/30" : ""}
+              disabled={false}
             >
               Token Verifications
             </GlassButton>
@@ -398,6 +402,8 @@ export default function AdminPage() {
                   <div>
                     <label className="block text-white/80 text-sm font-medium mb-2">Amount</label>
                     <GlassInput
+                      label="Amount"
+                      className=""
                       type="number"
                       value={withdrawAmount}
                       onChange={(e) => setWithdrawAmount(e.target.value)}
@@ -429,6 +435,8 @@ export default function AdminPage() {
                   <div className="md:col-span-2">
                     <label className="block text-white/80 text-sm font-medium mb-2">Destination Account</label>
                     <GlassInput
+                      label="Destination Account"
+                      className=""
                       type="text"
                       value={withdrawDestination}
                       onChange={(e) => setWithdrawDestination(e.target.value)}
@@ -436,7 +444,8 @@ export default function AdminPage() {
                     />
                   </div>
                 </div>
-                <GlassButton onClick={handleWithdraw} className="mt-4 w-full bg-green-500/20 hover:bg-green-500/30">
+                <GlassButton onClick={handleWithdraw}
+                 className="mt-4 w-full bg-green-500/20 hover:bg-green-500/30">
                   Withdraw (Instant & Fee-Free)
                 </GlassButton>
               </GlassCard>
@@ -499,6 +508,8 @@ export default function AdminPage() {
                   <div>
                     <label className="block text-white/80 text-sm font-medium mb-2">Amount</label>
                     <GlassInput
+                      label="Amount"
+                      className=""
                       type="number"
                       value={liquidityAmount}
                       onChange={(e) => setLiquidityAmount(e.target.value)}

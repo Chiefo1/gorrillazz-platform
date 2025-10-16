@@ -1,5 +1,4 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getCollection, Collections, type UserDocument } from "@/lib/db-mongo"
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,7 +9,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Wallet address required" }, { status: 400 })
     }
 
-    const usersCollection = await getCollection(Collections.USERS)
 
     // Check if user already exists
     const existingUser = await usersCollection.findOne({ walletAddress })

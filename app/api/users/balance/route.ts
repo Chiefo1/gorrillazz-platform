@@ -1,5 +1,4 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getCollection, Collections } from "@/lib/db-mongo"
 import { getSolanaBalance } from "@/lib/blockchain/solana"
 import { getEthereumBalance } from "@/lib/blockchain/ethereum"
 
@@ -14,7 +13,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Get GORR balance from database
-    const usersCollection = await getCollection(Collections.USERS)
     const user = await usersCollection.findOne({ walletAddress })
     const gorrBalance = user?.gorrBalance || 0
 
