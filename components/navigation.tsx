@@ -1,15 +1,57 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Menu, X } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import WalletButton from "./wallet-button"
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+  const [showHeader, setShowHeader] = useState(true)
+  const [lastScrollY, setLastScrollY] = useState(0)
   const router = useRouter()
+
+  useEffect(() => {
+    let scrollTimeout: NodeJS.Timeout
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY
+
+      // Clear existing timeout
+      clearTimeout(scrollTimeout)
+
+      // Detect scroll direction
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // Scrolling down - hide header
+        setShowHeader(false)
+      } else {
+        // Scrolling up - show header
+        setShowHeader(true)
+      }
+
+      // Set scrolled state for styling
+      setIsScrolled(currentScrollY > 50)
+
+      // Update last scroll position
+      setLastScrollY(currentScrollY)
+
+      // Show header after scrolling stops (500ms delay)
+      scrollTimeout = setTimeout(() => {
+        setShowHeader(true)
+      }, 500)
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true })
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll)
+      clearTimeout(scrollTimeout)
+    }
+  }, [lastScrollY])
 
   const menuItems = [
     { label: "Home", href: "/" },
@@ -38,17 +80,37 @@ export default function Navigation() {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-6">
+      <motion.nav
+        initial={{ y: 0 }}
+        animate={{
+          y: showHeader ? 0 : -100,
+          opacity: showHeader ? 1 : 0,
+        }}
+        transition={{
+          duration: 0.4,
+          ease: [0.22, 1, 0.36, 1],
+          delay: showHeader ? 0.1 : 0,
+        }}
+        className={`fixed top-0 left-0 right-0 z-50 px-6 py-6 transition-all duration-500 ${
+          isScrolled ? "bg-black/40 backdrop-blur-xl border-b border-white/10" : ""
+        }`}
+      >
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          {/* Logo - Center on mobile, left on desktop */}
           <Link href="/" className="absolute left-1/2 -translate-x-1/2 md:relative md:left-0 md:translate-x-0">
             <motion.div
               className="flex items-center gap-3"
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 400 }}
             >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/50">
-                <span className="text-2xl">🦍</span>
+              <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-primary/50 relative">
+                <Image
+                  src="/gorr-logo.svg"
+                  alt="Gorrillazz Logo"
+                  width={40}
+                  height={40}
+                  className="object-contain"
+                  priority
+                />
               </div>
               <span className="text-2xl font-bold text-foreground tracking-tight font-sans">Gorrillazz</span>
             </motion.div>
@@ -91,7 +153,7 @@ export default function Navigation() {
             </AnimatePresence>
           </motion.button>
         </div>
-      </nav>
+      </motion.nav>
 
       <AnimatePresence>
         {isMenuOpen && (
@@ -107,7 +169,6 @@ export default function Navigation() {
 
             {/* Menu Content */}
             <div className="relative h-full flex flex-col items-center justify-center px-6">
-              {/* Logo in Center */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -115,8 +176,14 @@ export default function Navigation() {
                 className="mb-16"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-2xl shadow-primary/50">
-                    <span className="text-4xl">🦍</span>
+                  <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-2xl shadow-primary/50 relative">
+                    <Image
+                      src="/gorr-logo.svg"
+                      alt="Gorrillazz Logo"
+                      width={170}
+                      height={170}
+                      className="object-contain"
+                    />
                   </div>
                   <span className="text-5xl md:text-6xl font-bold text-foreground tracking-tight font-sans">
                     Gorrillazz

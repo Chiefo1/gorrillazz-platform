@@ -12,6 +12,10 @@ export const metadata: Metadata = {
   description:
     "Create and deploy tokens across Solana, Ethereum, BNB, and Gorrillazz network. Powered by GORR stablecoin.",
   generator: "v0.app",
+  icons: {
+    icon: "/gorr-logo.svg",
+    apple: "/gorr-logo.svg",
+  },
 }
 
 export default function RootLayout({

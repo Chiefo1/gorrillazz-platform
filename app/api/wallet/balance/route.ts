@@ -1,5 +1,38 @@
 import { NextResponse } from "next/server"
 import { GORR_TOKEN, USDCC_TOKEN } from "@/lib/constants/gorr-token"
+import { ethers } from "ethers"
+
+// ERC20 ABI for balanceOf
+const ERC20_ABI = [
+  "function balanceOf(address owner) view returns (uint256)",
+  "function decimals() view returns (uint8)",
+]
+
+async function getTokenBalance(
+  provider: ethers.JsonRpcProvider,
+  tokenAddress: string,
+  walletAddress: string,
+): Promise<string> {
+  try {
+    const contract = new ethers.Contract(tokenAddress, ERC20_ABI, provider)
+    const balance = await contract.balanceOf(walletAddress)
+    const decimals = await contract.decimals()
+    return ethers.formatUnits(balance, decimals)
+  } catch (error) {
+    console.error("[v0] Token balance fetch error:", error)
+    return "0"
+  }
+}
+
+async function getNativeBalance(provider: ethers.JsonRpcProvider, walletAddress: string): Promise<string> {
+  try {
+    const balance = await provider.getBalance(walletAddress)
+    return ethers.formatEther(balance)
+  } catch (error) {
+    console.error("[v0] Native balance fetch error:", error)
+    return "0"
+  }
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -11,13 +44,42 @@ export async function GET(request: Request) {
   }
 
   try {
-    const isGorrInitialWallet = wallet === GORR_TOKEN.initialWallet
+    let provider: ethers.JsonRpcProvider
+    let nativeSymbol: string
+    let nativeName: string
+    let nativeLogo: string
+    let nativePrice = 0
 
-    const gorrBalance = isGorrInitialWallet ? GORR_TOKEN.totalSupply : 1000.0
-    const usdccBalance = isGorrInitialWallet ? USDCC_TOKEN.totalSupply : 500.0
-    const nativeBalance = 2.5
+    if (chain === "ethereum") {
+      provider = new ethers.JsonRpcProvider(process.env.ETHEREUM_RPC_URL || "https://eth.llamarpc.com")
+      nativeSymbol = "ETH"
+      nativeName = "Ethereum"
+      nativeLogo = "https://cryptologos.cc/logos/ethereum-eth-logo.png"
+      nativePrice = 3245.67 // TODO: Fetch from price API
+    } else if (chain === "bnb") {
+      provider = new ethers.JsonRpcProvider(process.env.BNB_RPC_URL || "https://bsc-dataseed.binance.org")
+      nativeSymbol = "BNB"
+      nativeName = "BNB"
+      nativeLogo = "https://cryptologos.cc/logos/bnb-bnb-logo.png"
+      nativePrice = 312.45 // TODO: Fetch from price API
+    } else {
+      // Default to Ethereum
+      provider = new ethers.JsonRpcProvider(process.env.ETHEREUM_RPC_URL || "https://eth.llamarpc.com")
+      nativeSymbol = "ETH"
+      nativeName = "Ethereum"
+      nativeLogo = "https://cryptologos.cc/logos/ethereum-eth-logo.png"
+      nativePrice = 3245.67
+    }
 
-    const nativePrice = chain === "ethereum" ? 3245.67 : chain === "bnb" ? 312.45 : chain === "solana" ? 98.76 : 0
+    const [gorrBalanceStr, usdccBalanceStr, nativeBalanceStr] = await Promise.all([
+      getTokenBalance(provider, GORR_TOKEN.address, wallet),
+      getTokenBalance(provider, USDCC_TOKEN.address, wallet),
+      getNativeBalance(provider, wallet),
+    ])
+
+    const gorrBalance = Number.parseFloat(gorrBalanceStr)
+    const usdccBalance = Number.parseFloat(usdccBalanceStr)
+    const nativeBalance = Number.parseFloat(nativeBalanceStr)
 
     const balances = {
       wallet,
@@ -42,18 +104,13 @@ export async function GET(request: Request) {
           logo: "/usdcc-logo.png",
         },
         {
-          symbol: chain === "ethereum" ? "ETH" : chain === "bnb" ? "BNB" : "SOL",
-          name: chain === "ethereum" ? "Ethereum" : chain === "bnb" ? "BNB" : "Solana",
+          symbol: nativeSymbol,
+          name: nativeName,
           balance: nativeBalance.toString(),
           price: nativePrice,
           value: nativeBalance * nativePrice,
           chain: chain || "ethereum",
-          logo:
-            chain === "ethereum"
-              ? "https://cryptologos.cc/logos/ethereum-eth-logo.png"
-              : chain === "bnb"
-                ? "https://cryptologos.cc/logos/bnb-bnb-logo.png"
-                : "https://cryptologos.cc/logos/solana-sol-logo.png",
+          logo: nativeLogo,
         },
       ],
       totalValue: gorrBalance * GORR_TOKEN.price + usdccBalance * USDCC_TOKEN.price + nativeBalance * nativePrice,
