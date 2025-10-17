@@ -77,6 +77,17 @@ CREATE TABLE IF NOT EXISTS "Transaction" (
     CONSTRAINT "Transaction_tokenId_fkey" FOREIGN KEY ("tokenId") REFERENCES "Token"("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
+-- Add payment-related fields to Transaction table
+ALTER TABLE "Transaction" 
+ADD COLUMN IF NOT EXISTS "paymentProvider" TEXT,
+ADD COLUMN IF NOT EXISTS "paymentMethod" TEXT,
+ADD COLUMN IF NOT EXISTS "fiatAmount" DOUBLE PRECISION,
+ADD COLUMN IF NOT EXISTS "fiatCurrency" TEXT,
+ADD COLUMN IF NOT EXISTS "fee" DOUBLE PRECISION,
+ADD COLUMN IF NOT EXISTS "netAmount" DOUBLE PRECISION,
+ADD COLUMN IF NOT EXISTS "revokedAt" TIMESTAMP(3),
+ADD COLUMN IF NOT EXISTS "revokeReason" TEXT;
+
 -- Create GorrPrice table
 CREATE TABLE IF NOT EXISTS "GorrPrice" (
     "id" TEXT PRIMARY KEY,
@@ -100,10 +111,10 @@ INSERT INTO "GorrPrice" ("id", "price", "timestamp")
 VALUES ('initial_gorr_price', 1.00, CURRENT_TIMESTAMP)
 ON CONFLICT ("id") DO NOTHING;
 
--- Create admin user (optional - for testing)
--- INSERT INTO "User" ("id", "walletAddress", "username", "gorrBalance")
--- VALUES ('admin_user_id', 'gorr_admin_wallet_2024', 'admin', 1000000)
--- ON CONFLICT ("walletAddress") DO NOTHING;
+-- Create admin user for the platform
+INSERT INTO "User" ("id", "walletAddress", "username", "email", "gorrBalance")
+VALUES ('admin_user_id', 'gorr_admin_wallet_2024', 'admin', 'admin@gorrillazz.app', 1000000)
+ON CONFLICT ("walletAddress") DO UPDATE SET username = 'admin', email = 'admin@gorrillazz.app';
 
 -- Create GORR token entry
 INSERT INTO "User" ("id", "walletAddress", "username", "gorrBalance")

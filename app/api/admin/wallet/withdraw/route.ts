@@ -10,13 +10,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 })
     }
 
+    const adminWalletAddress = process.env.ADMIN_WALLET_ADDRESS || "gorr_admin_wallet_2024"
+
+    let adminUser = await prisma.user.findUnique({
+      where: { walletAddress: adminWalletAddress },
+    })
+
+    if (!adminUser) {
+      adminUser = await prisma.user.create({
+        data: {
+          walletAddress: adminWalletAddress,
+          username: "admin",
+          email: "admin@gorrillazz.app",
+        },
+      })
+    }
+
     const result = await adminWithdraw(token, amount, destination, provider, currency)
 
     if (result.success) {
       // Record transaction in database
       await prisma.transaction.create({
         data: {
-          userId: "admin",
+          userId: adminUser.id,
           type: "withdrawal",
           amount: amount.toString(),
           toAddress: destination,
@@ -35,6 +51,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result)
   } catch (error) {
+    console.error("[v0] Admin withdrawal error:", error)
     return NextResponse.json(
       {
         success: false,
