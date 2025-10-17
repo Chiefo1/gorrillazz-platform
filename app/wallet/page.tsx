@@ -79,6 +79,7 @@ export default function WalletPage() {
 
   useEffect(() => {
     if (isConnected && address) {
+      console.log("[v0] Wallet connected, fetching data for:", address)
       fetchTokens()
       fetchBalances()
       fetchTrades()
@@ -87,33 +88,54 @@ export default function WalletPage() {
 
   const fetchTokens = async () => {
     try {
+      console.log("[v0] Fetching tokens...")
       const type = viewMode === "coins" ? "popular" : "all"
       const chainParam = selectedChain !== "all" ? `&chain=${selectedChain}` : ""
       const response = await fetch(`/api/tokens/index?type=${type}${chainParam}`)
       const data = await response.json()
+      console.log("[v0] Tokens fetched:", data)
       setTokens(data.tokens || [])
     } catch (error) {
       console.error("[v0] Failed to fetch tokens:", error)
+      setTokens([])
     }
   }
 
   const fetchBalances = async () => {
     try {
+      console.log("[v0] Fetching balances for:", address, chain)
       const response = await fetch(`/api/wallet/balance?wallet=${address}&chain=${chain}`)
       const data = await response.json()
+      console.log("[v0] Balances fetched:", data)
       setBalances(data)
+      if (data.tokens && data.tokens.length > 0) {
+        setTokens((prevTokens) => {
+          const balanceMap = new Map(data.tokens.map((t: any) => [t.symbol, t]))
+          return prevTokens.map((token) => {
+            const balanceData = balanceMap.get(token.symbol)
+            if (balanceData) {
+              return { ...token, balance: balanceData.balance, value: balanceData.value }
+            }
+            return token
+          })
+        })
+      }
     } catch (error) {
       console.error("[v0] Failed to fetch balances:", error)
+      setBalances({ tokens: [], totalValue: 0 })
     }
   }
 
   const fetchTrades = async () => {
     try {
+      console.log("[v0] Fetching trades...")
       const response = await fetch(`/api/wallet/trades?wallet=${address}`)
       const data = await response.json()
+      console.log("[v0] Trades fetched:", data)
       setTrades(data.trades || [])
     } catch (error) {
       console.error("[v0] Failed to fetch trades:", error)
+      setTrades([])
     }
   }
 
@@ -473,108 +495,124 @@ export default function WalletPage() {
                 <h3 className="text-xl font-semibold text-foreground mb-4">
                   {viewMode === "tokens" ? "Your Tokens" : "Popular Coins"}
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                  {tokens.map((token) => (
-                    <div
-                      key={token.id}
-                      className="p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all border border-white/5 hover:border-white/20"
-                    >
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="relative w-8 h-8 rounded-full overflow-hidden bg-white/10 flex-shrink-0">
-                          <Image
-                            src={token.logo || "/placeholder.svg?height=32&width=32"}
-                            alt={token.symbol}
-                            width={32}
-                            height={32}
-                            className="object-cover"
-                            unoptimized={token.logo?.startsWith("http")}
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement
-                              target.src = "/placeholder.svg?height=32&width=32&query=" + token.symbol
-                            }}
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm text-foreground truncate">{token.symbol}</p>
-                          <p className="text-xs text-muted-foreground truncate">{token.name}</p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 mb-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs text-muted-foreground">Price</span>
-                          <span className="text-sm font-semibold text-foreground">${token.price.toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs text-muted-foreground">24h</span>
-                          <div className="flex items-center gap-1">
-                            {token.change24h >= 0 ? (
-                              <>
-                                <TrendingUp className="w-3 h-3 text-accent" />
-                                <span className="text-xs text-accent">+{token.change24h}%</span>
-                              </>
-                            ) : (
-                              <>
-                                <TrendingDown className="w-3 h-3 text-destructive" />
-                                <span className="text-xs text-destructive">{token.change24h}%</span>
-                              </>
-                            )}
+                {loading && tokens.length === 0 ? (
+                  <div className="text-center py-12">
+                    <RefreshCw className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+                    <p className="text-muted-foreground">Loading tokens...</p>
+                  </div>
+                ) : tokens.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground">No tokens found</p>
+                    <GlassButton variant="primary" size="sm" onClick={fetchTokens} className="mt-4">
+                      Retry
+                    </GlassButton>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                    {tokens.map((token) => (
+                      <div
+                        key={token.id}
+                        className="p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all border border-white/5 hover:border-white/20"
+                      >
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="relative w-8 h-8 rounded-full overflow-hidden bg-white/10 flex-shrink-0">
+                            <Image
+                              src={token.logo || "/placeholder.svg?height=32&width=32"}
+                              alt={token.symbol}
+                              width={32}
+                              height={32}
+                              className="object-cover"
+                              unoptimized={token.logo?.startsWith("http")}
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement
+                                target.src = "/placeholder.svg?height=32&width=32&query=" + token.symbol
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-sm text-foreground truncate">{token.symbol}</p>
+                            <p className="text-xs text-muted-foreground truncate">{token.name}</p>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="grid grid-cols-4 gap-1">
-                        <button
-                          onClick={() => openTradeModal(token, "buy")}
-                          className="px-2 py-1 text-xs rounded-lg bg-accent/20 hover:bg-accent/30 text-accent transition-colors flex items-center justify-center gap-1"
-                        >
-                          <ArrowDownLeft className="w-3 h-3" />
-                          Buy
-                        </button>
-                        <button
-                          onClick={() => openTradeModal(token, "sell")}
-                          className="px-2 py-1 text-xs rounded-lg bg-destructive/20 hover:bg-destructive/30 text-destructive transition-colors flex items-center justify-center gap-1"
-                        >
-                          <ArrowUpRight className="w-3 h-3" />
-                          Sell
-                        </button>
-                        <button
-                          onClick={() => openTradeModal(token, "trade")}
-                          className="px-2 py-1 text-xs rounded-lg bg-primary/20 hover:bg-primary/30 text-primary transition-colors flex items-center justify-center gap-1"
-                        >
-                          <Repeat className="w-3 h-3" />
-                          Swap
-                        </button>
-                        <button
-                          onClick={() => openSendModal(token)}
-                          className="px-2 py-1 text-xs rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors flex items-center justify-center gap-1"
-                        >
-                          <Send className="w-3 h-3" />
-                          Send
-                        </button>
-                      </div>
+                        <div className="space-y-2 mb-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-muted-foreground">Price</span>
+                            <span className="text-sm font-semibold text-foreground">
+                              ${token.price.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-muted-foreground">24h</span>
+                            <div className="flex items-center gap-1">
+                              {token.change24h >= 0 ? (
+                                <>
+                                  <TrendingUp className="w-3 h-3 text-accent" />
+                                  <span className="text-xs text-accent">+{token.change24h}%</span>
+                                </>
+                              ) : (
+                                <>
+                                  <TrendingDown className="w-3 h-3 text-destructive" />
+                                  <span className="text-xs text-destructive">{token.change24h}%</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
 
-                      {(token.symbol === "GORR" || token.symbol === "USDCc") && (
-                        <div className="grid grid-cols-2 gap-1 pt-2 border-t border-white/10">
+                        <div className="grid grid-cols-4 gap-1">
                           <button
-                            onClick={() => openPaymentModal(token, "deposit")}
-                            className="px-2 py-1 text-xs rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400 transition-colors flex items-center justify-center gap-1"
+                            onClick={() => openTradeModal(token, "buy")}
+                            className="px-2 py-1 text-xs rounded-lg bg-accent/20 hover:bg-accent/30 text-accent transition-colors flex items-center justify-center gap-1"
                           >
-                            <CreditCard className="w-3 h-3" />
-                            Buy with Fiat
+                            <ArrowDownLeft className="w-3 h-3" />
+                            Buy
                           </button>
                           <button
-                            onClick={() => openPaymentModal(token, "withdraw")}
-                            className="px-2 py-1 text-xs rounded-lg bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 transition-colors flex items-center justify-center gap-1"
+                            onClick={() => openTradeModal(token, "sell")}
+                            className="px-2 py-1 text-xs rounded-lg bg-destructive/20 hover:bg-destructive/30 text-destructive transition-colors flex items-center justify-center gap-1"
                           >
-                            <DollarSign className="w-3 h-3" />
-                            Withdraw
+                            <ArrowUpRight className="w-3 h-3" />
+                            Sell
+                          </button>
+                          <button
+                            onClick={() => openTradeModal(token, "trade")}
+                            className="px-2 py-1 text-xs rounded-lg bg-primary/20 hover:bg-primary/30 text-primary transition-colors flex items-center justify-center gap-1"
+                          >
+                            <Repeat className="w-3 h-3" />
+                            Swap
+                          </button>
+                          <button
+                            onClick={() => openSendModal(token)}
+                            className="px-2 py-1 text-xs rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors flex items-center justify-center gap-1"
+                          >
+                            <Send className="w-3 h-3" />
+                            Send
                           </button>
                         </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+
+                        {(token.symbol === "GORR" || token.symbol === "USDCc") && (
+                          <div className="grid grid-cols-2 gap-1 pt-2 border-t border-white/10">
+                            <button
+                              onClick={() => openPaymentModal(token, "deposit")}
+                              className="px-2 py-1 text-xs rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400 transition-colors flex items-center justify-center gap-1"
+                            >
+                              <CreditCard className="w-3 h-3" />
+                              Buy with Fiat
+                            </button>
+                            <button
+                              onClick={() => openPaymentModal(token, "withdraw")}
+                              className="px-2 py-1 text-xs rounded-lg bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 transition-colors flex items-center justify-center gap-1"
+                            >
+                              <DollarSign className="w-3 h-3" />
+                              Withdraw
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </GlassCard>
 
               {/* Recent Trades */}

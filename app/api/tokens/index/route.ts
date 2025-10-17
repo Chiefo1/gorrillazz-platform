@@ -6,22 +6,25 @@ const ALL_TOKENS = [
     name: "Gorrillazz",
     symbol: "GORR",
     chain: "gorrillazz",
-    price: 1.0, // 1:1 USD peg
+    price: 1.0, // 1:1 EUR peg (not USD)
     change24h: 0.0,
     marketCap: 400000000,
     volume24h: 5000000,
-    logo: "/gorr-logo.png",
+    logo: "/gorr-logo.svg", // Updated to use SVG logo
     isPopular: true,
     balance: 0,
     verified: true,
     type: "stablecoin",
+    contractAddress: process.env.GORR_CONTRACT_ADDRESS_GORRILLAZZ,
+    decimals: 18,
+    isNative: false,
   },
   {
     id: "usdcc",
     name: "USD Coin Custom",
     symbol: "USDCc",
-    chain: "gorrillazz", // Changed from ethereum to gorrillazz
-    price: 1.0, // 1:1 USD peg
+    chain: "gorrillazz",
+    price: 1.0,
     change24h: 0.0,
     marketCap: 400000000,
     volume24h: 8000000,
@@ -30,6 +33,9 @@ const ALL_TOKENS = [
     balance: 0,
     verified: true,
     type: "stablecoin",
+    contractAddress: process.env.USDCC_CONTRACT_ADDRESS_GORRILLAZZ,
+    decimals: 18,
+    isNative: false,
   },
   {
     id: "eth",
@@ -44,6 +50,8 @@ const ALL_TOKENS = [
     isPopular: true,
     balance: 0,
     verified: true,
+    isNative: true,
+    decimals: 18,
   },
   {
     id: "bnb",
@@ -58,6 +66,8 @@ const ALL_TOKENS = [
     isPopular: true,
     balance: 0,
     verified: true,
+    isNative: false,
+    decimals: 18,
   },
   {
     id: "sol",
@@ -72,6 +82,8 @@ const ALL_TOKENS = [
     isPopular: true,
     balance: 0,
     verified: true,
+    isNative: false,
+    decimals: 18,
   },
   {
     id: "usdc",
@@ -87,6 +99,9 @@ const ALL_TOKENS = [
     balance: 0,
     verified: true,
     type: "stablecoin",
+    contractAddress: process.env.USDC_CONTRACT_ADDRESS_ETHEREUM,
+    decimals: 6,
+    isNative: false,
   },
   {
     id: "usdt",
@@ -102,6 +117,9 @@ const ALL_TOKENS = [
     balance: 0,
     verified: true,
     type: "stablecoin",
+    contractAddress: process.env.USDT_CONTRACT_ADDRESS_ETHEREUM,
+    decimals: 6,
+    isNative: false,
   },
   {
     id: "btc",
@@ -116,6 +134,8 @@ const ALL_TOKENS = [
     isPopular: true,
     balance: 0,
     verified: true,
+    isNative: false,
+    decimals: 8,
   },
 ]
 

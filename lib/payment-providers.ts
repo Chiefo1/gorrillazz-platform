@@ -12,12 +12,12 @@ export interface PaymentProvider {
 export const PAYMENT_PROVIDERS: PaymentProvider[] = [
   {
     id: "revolut",
-    name: "Revolut",
+    name: "Revolut", // Primary payment provider
     type: "fiat",
     supportedCurrencies: ["USD", "EUR", "GBP"],
     fees: {
-      deposit: 0,
-      withdrawal: 0.5,
+      deposit: 0, // Free deposits
+      withdrawal: 0, // Free withdrawals for admin
     },
   },
   {
@@ -32,22 +32,22 @@ export const PAYMENT_PROVIDERS: PaymentProvider[] = [
   },
   {
     id: "paypal",
-    name: "PayPal",
+    name: "PayPal", // Secondary payment provider
     type: "fiat",
     supportedCurrencies: ["USD", "EUR", "GBP"],
     fees: {
-      deposit: 3.5,
-      withdrawal: 2.0,
+      deposit: 2.5,
+      withdrawal: 1.5,
     },
   },
   {
     id: "card",
-    name: "Credit/Debit Card",
+    name: "Credit/Debit Card", // Card payments
     type: "fiat",
     supportedCurrencies: ["USD", "EUR", "GBP"],
     fees: {
-      deposit: 3.0,
-      withdrawal: 2.5,
+      deposit: 2.9,
+      withdrawal: 2.0,
     },
   },
 ]
