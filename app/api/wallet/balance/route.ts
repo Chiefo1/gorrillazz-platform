@@ -8,12 +8,26 @@ const ERC20_ABI = [
   "function decimals() view returns (uint8)",
 ]
 
+function isValidEthereumAddress(address: string): boolean {
+  return /^0x[a-fA-F0-9]{40}$/.test(address)
+}
+
 async function getTokenBalance(
   provider: ethers.JsonRpcProvider,
-  tokenAddress: string,
+  tokenAddress: string | undefined,
   walletAddress: string,
 ): Promise<string> {
   try {
+    if (!tokenAddress || !isValidEthereumAddress(tokenAddress)) {
+      console.log("[v0] Invalid token address:", tokenAddress)
+      return "0"
+    }
+
+    if (!isValidEthereumAddress(walletAddress)) {
+      console.log("[v0] Invalid wallet address:", walletAddress)
+      return "0"
+    }
+
     const contract = new ethers.Contract(tokenAddress, ERC20_ABI, provider)
     const balance = await contract.balanceOf(walletAddress)
     const decimals = await contract.decimals()
@@ -26,6 +40,11 @@ async function getTokenBalance(
 
 async function getNativeBalance(provider: ethers.JsonRpcProvider, walletAddress: string): Promise<string> {
   try {
+    if (!isValidEthereumAddress(walletAddress)) {
+      console.log("[v0] Invalid wallet address for native balance:", walletAddress)
+      return "0"
+    }
+
     const balance = await provider.getBalance(walletAddress)
     return ethers.formatEther(balance)
   } catch (error) {
@@ -44,6 +63,38 @@ export async function GET(request: Request) {
   }
 
   try {
+    const isGorrWallet = wallet.startsWith("gorr_")
+
+    if (isGorrWallet) {
+      // For GORR wallets, return mock data or fetch from GORR blockchain
+      const balances = {
+        wallet,
+        chain: "gorrillazz",
+        tokens: [
+          {
+            symbol: "GORR",
+            name: "Gorrillazz",
+            balance: "1000",
+            price: GORR_TOKEN.price,
+            value: 1000 * GORR_TOKEN.price,
+            chain: "gorrillazz",
+            logo: "/gorr-logo.svg",
+          },
+          {
+            symbol: "USDCc",
+            name: "USD Coin Custom",
+            balance: "500",
+            price: USDCC_TOKEN.price,
+            value: 500 * USDCC_TOKEN.price,
+            chain: "gorrillazz",
+            logo: "/usdcc-logo.png",
+          },
+        ],
+        totalValue: 1000 * GORR_TOKEN.price + 500 * USDCC_TOKEN.price,
+      }
+      return NextResponse.json(balances)
+    }
+
     let provider: ethers.JsonRpcProvider
     let nativeSymbol: string
     let nativeName: string
@@ -92,7 +143,7 @@ export async function GET(request: Request) {
           price: GORR_TOKEN.price,
           value: gorrBalance * GORR_TOKEN.price,
           chain: "gorrillazz",
-          logo: "/gorr-logo.png",
+          logo: "/gorr-logo.svg",
         },
         {
           symbol: "USDCc",

@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
 
@@ -7,6 +9,11 @@ const variants = {
   default: "glass border border-white/10 bg-white/[0.05] focus:ring-2 focus:ring-primary/40",
   primary: "glass border border-primary/30 bg-primary/10 focus:ring-2 focus:ring-primary/50",
   accent: "glass border border-accent/30 bg-accent/10 focus:ring-2 focus:ring-accent/50",
+}
+
+interface GlassInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label?: string
+  variant?: "default" | "primary" | "accent"
 }
 
 export default function GlassInput({
@@ -18,7 +25,7 @@ export default function GlassInput({
   variant = "default",
   className,
   ...props
-}) {
+}: GlassInputProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 5 }}

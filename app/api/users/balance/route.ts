@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/lib/db"
 import { getSolanaBalance } from "@/lib/blockchain/solana"
 import { getEthereumBalance } from "@/lib/blockchain/ethereum"
 
@@ -12,8 +13,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Wallet address required" }, { status: 400 })
     }
 
-    // Get GORR balance from database
-    const user = await usersCollection.findOne({ walletAddress })
+    const user = await prisma.user.findUnique({
+      where: { walletAddress },
+    })
     const gorrBalance = user?.gorrBalance || 0
 
     // Get native token balance from blockchain

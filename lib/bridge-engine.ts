@@ -1,3 +1,4 @@
+// Cross-chain bridge for GORR and USDCc tokens
 export interface BridgeParams {
   token: string
   amount: number

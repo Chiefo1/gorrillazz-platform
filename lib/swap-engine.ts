@@ -1,5 +1,4 @@
 import { ethers } from "ethers"
-import { Connection } from "@solana/web3.js"
 
 export interface SwapParams {
   fromToken: string
@@ -19,13 +18,10 @@ export interface SwapResult {
   estimatedGas?: string
 }
 
-// Token price oracle (in production, use Chainlink or similar)
 const TOKEN_PRICES: Record<string, number> = {
-  GORR: 1.0,
+  GORR: 1.09, // 1 EUR in USD
   USDCc: 1.0,
   ETH: 3245.67,
-  BNB: 312.45,
-  SOL: 98.76,
   USDC: 1.0,
   USDT: 1.0,
   BTC: 67234.56,
@@ -58,21 +54,19 @@ export function calculateSwapOutput(
   return { amountOut, priceImpact, fee }
 }
 
-// Execute swap on Ethereum/BNB
 async function executeEVMSwap(params: SwapParams): Promise<SwapResult> {
   try {
-    const network = params.fromChain as "ethereum" | "bnb"
-    const rpcUrl = network === "ethereum" ? process.env.ETHEREUM_RPC_URL : process.env.BNB_RPC_URL
-    const privateKey = network === "ethereum" ? process.env.ETHEREUM_PRIVATE_KEY : process.env.BNB_PRIVATE_KEY
+    const rpcUrl = process.env.ETHEREUM_RPC_URL
+    const privateKey = process.env.ETHEREUM_PRIVATE_KEY
 
     if (!rpcUrl || !privateKey) {
-      throw new Error("Missing RPC URL or private key")
+      throw new Error("Missing Ethereum RPC URL or private key")
     }
 
     const provider = new ethers.JsonRpcProvider(rpcUrl)
     const wallet = new ethers.Wallet(privateKey, provider)
 
-    // In production, integrate with Uniswap V3 or PancakeSwap
+    // In production, integrate with Uniswap V3
     // For now, simulate the swap
     const { amountOut } = calculateSwapOutput(params.fromToken, params.toToken, params.amount, params.slippage)
 
@@ -94,36 +88,15 @@ async function executeEVMSwap(params: SwapParams): Promise<SwapResult> {
   }
 }
 
-// Execute swap on Solana
-async function executeSolanaSwap(params: SwapParams): Promise<SwapResult> {
-  try {
-    const rpcUrl = process.env.SOLANA_RPC_URL || "https://api.devnet.solana.com"
-    const connection = new Connection(rpcUrl, "confirmed")
-
-    // In production, integrate with Raydium or Orca
-    const { amountOut } = calculateSwapOutput(params.fromToken, params.toToken, params.amount, params.slippage)
-
-    // Simulate transaction
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-    const txHash = `${Math.random().toString(16).slice(2, 66)}`
-
-    return {
-      success: true,
-      txHash,
-      amountOut,
-      estimatedGas: "0.00001",
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Swap failed",
-    }
-  }
-}
-
-// Execute swap on Gorrillazz chain
 async function executeGorrillazzSwap(params: SwapParams): Promise<SwapResult> {
   try {
+    const rpcUrl = process.env.GORRILLAZZ_RPC_URL || "https://rpc.gorrillazz.network"
+    const privateKey = process.env.GORRILLAZZ_PRIVATE_KEY
+
+    if (!privateKey) {
+      throw new Error("Missing Gorrillazz private key")
+    }
+
     const { amountOut } = calculateSwapOutput(params.fromToken, params.toToken, params.amount, params.slippage)
 
     // Simulate native chain swap
@@ -144,7 +117,6 @@ async function executeGorrillazzSwap(params: SwapParams): Promise<SwapResult> {
   }
 }
 
-// Main swap function
 export async function executeSwap(params: SwapParams): Promise<SwapResult> {
   try {
     // Validate params
@@ -152,13 +124,11 @@ export async function executeSwap(params: SwapParams): Promise<SwapResult> {
       return { success: false, error: "Invalid swap parameters" }
     }
 
-    // Route to appropriate chain
-    if (params.fromChain === "ethereum" || params.fromChain === "bnb") {
-      return await executeEVMSwap(params)
-    } else if (params.fromChain === "solana") {
-      return await executeSolanaSwap(params)
-    } else if (params.fromChain === "gorrillazz") {
+    // Route to appropriate chain - Gorrillazz is primary
+    if (params.fromChain === "gorrillazz") {
       return await executeGorrillazzSwap(params)
+    } else if (params.fromChain === "ethereum") {
+      return await executeEVMSwap(params)
     }
 
     return { success: false, error: "Unsupported chain" }

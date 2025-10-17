@@ -1,3 +1,4 @@
+// Token Registry System - Similar to CoinGecko/Uniswap token lists
 export interface TokenMetadata {
   chainId: number
   address: string

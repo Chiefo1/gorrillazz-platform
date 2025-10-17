@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/lib/db"
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,13 +10,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Wallet address required" }, { status: 400 })
     }
 
-
     // Check if user already exists
-    const existingUser = await usersCollection.findOne({ walletAddress })
+    const existingUser = await prisma.user.findUnique({
+      where: { walletAddress },
+    })
+
     if (existingUser) {
       return NextResponse.json({
         user: {
-          id: existingUser._id?.toString(),
+          id: existingUser.id,
           walletAddress: existingUser.walletAddress,
           email: existingUser.email,
           username: existingUser.username,
@@ -25,24 +28,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new user
-    const userDoc: UserDocument = {
-      walletAddress,
-      email,
-      username,
-      gorrBalance: 0,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
-
-    const result = await usersCollection.insertOne(userDoc)
-
-    return NextResponse.json({
-      user: {
-        id: result.insertedId.toString(),
+    const newUser = await prisma.user.create({
+      data: {
         walletAddress,
         email,
         username,
         gorrBalance: 0,
+      },
+    })
+
+    return NextResponse.json({
+      user: {
+        id: newUser.id,
+        walletAddress: newUser.walletAddress,
+        email: newUser.email,
+        username: newUser.username,
+        gorrBalance: newUser.gorrBalance,
       },
     })
   } catch (error) {

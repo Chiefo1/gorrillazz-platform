@@ -24,20 +24,20 @@ const ERC20_ABI = [
 ]
 
 // Get provider based on network
-const getProvider = (network: "ethereum" | "bnb") => {
-  const rpcUrl = network === "ethereum" ? process.env.ETHEREUM_RPC_URL : process.env.BNB_RPC_URL
+const getProvider = () => {
+  const rpcUrl = process.env.ETHEREUM_RPC_URL
   if (!rpcUrl) {
-    throw new Error(`${network.toUpperCase()}_RPC_URL not found in environment variables`)
+    throw new Error("ETHEREUM_RPC_URL not found in environment variables")
   }
   return new ethers.JsonRpcProvider(rpcUrl)
 }
 
 // Get signer (wallet) for transactions
-const getSigner = (network: "ethereum" | "bnb") => {
-  const provider = getProvider(network)
-  const privateKey = network === "ethereum" ? process.env.ETHEREUM_PRIVATE_KEY : process.env.BNB_PRIVATE_KEY
+const getSigner = () => {
+  const provider = getProvider()
+  const privateKey = process.env.ETHEREUM_PRIVATE_KEY
   if (!privateKey) {
-    throw new Error(`${network.toUpperCase()}_PRIVATE_KEY not found in environment variables`)
+    throw new Error("ETHEREUM_PRIVATE_KEY not found in environment variables")
   }
   return new ethers.Wallet(privateKey, provider)
 }
@@ -45,12 +45,11 @@ const getSigner = (network: "ethereum" | "bnb") => {
 export async function deployEthereumToken(
   config: EthereumTokenConfig,
   walletAddress: string,
-  network: "ethereum" | "bnb",
 ): Promise<{ success: boolean; contractAddress?: string; error?: string }> {
   try {
-    console.log("[v0] Deploying EVM token:", config, network)
+    console.log("[v0] Deploying Ethereum token:", config)
 
-    const signer = getSigner(network)
+    const signer = getSigner()
 
     // ERC-20 Token Bytecode (simplified - in production, use compiled Solidity contract)
     // This is a placeholder - you would compile your Solidity contract and use the bytecode
@@ -76,7 +75,7 @@ export async function deployEthereumToken(
       contractAddress: mockAddress,
     }
   } catch (error) {
-    console.error("[v0] EVM deployment error:", error)
+    console.error("[v0] Ethereum deployment error:", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -88,12 +87,11 @@ export async function createEthereumLiquidityPool(
   tokenAddress: string,
   amount: string,
   lockPeriod: number,
-  network: "ethereum" | "bnb",
 ): Promise<{ success: boolean; poolAddress?: string; error?: string }> {
   try {
-    console.log("[v0] Creating EVM liquidity pool:", { tokenAddress, amount, lockPeriod, network })
+    console.log("[v0] Creating Ethereum liquidity pool:", { tokenAddress, amount, lockPeriod })
 
-    const signer = getSigner(network)
+    const signer = getSigner()
 
     // In production, integrate with Uniswap V2/V3 or PancakeSwap
     // For now, simulate pool creation
@@ -107,7 +105,7 @@ export async function createEthereumLiquidityPool(
       poolAddress: mockPoolAddress,
     }
   } catch (error) {
-    console.error("[v0] EVM pool creation error:", error)
+    console.error("[v0] Ethereum pool creation error:", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -115,24 +113,20 @@ export async function createEthereumLiquidityPool(
   }
 }
 
-export async function getEthereumBalance(walletAddress: string, network: "ethereum" | "bnb"): Promise<number> {
+export async function getEthereumBalance(walletAddress: string): Promise<number> {
   try {
-    const provider = getProvider(network)
+    const provider = getProvider()
     const balance = await provider.getBalance(walletAddress)
     return Number.parseFloat(ethers.formatEther(balance))
   } catch (error) {
-    console.error("[v0] Error fetching EVM balance:", error)
+    console.error("[v0] Error fetching Ethereum balance:", error)
     return 0
   }
 }
 
-export async function getTokenBalance(
-  tokenAddress: string,
-  walletAddress: string,
-  network: "ethereum" | "bnb",
-): Promise<string> {
+export async function getTokenBalance(tokenAddress: string, walletAddress: string): Promise<string> {
   try {
-    const provider = getProvider(network)
+    const provider = getProvider()
     const contract = new ethers.Contract(tokenAddress, ERC20_ABI, provider)
     const balance = await contract.balanceOf(walletAddress)
     const decimals = await contract.decimals()
@@ -148,12 +142,11 @@ export async function transferToken(
   fromAddress: string,
   toAddress: string,
   amount: string,
-  network: "ethereum" | "bnb",
 ): Promise<{ success: boolean; txHash?: string; error?: string }> {
   try {
-    console.log("[v0] Transferring EVM token:", { tokenAddress, fromAddress, toAddress, amount, network })
+    console.log("[v0] Transferring Ethereum token:", { tokenAddress, fromAddress, toAddress, amount })
 
-    const signer = getSigner(network)
+    const signer = getSigner()
     const contract = new ethers.Contract(tokenAddress, ERC20_ABI, signer)
 
     // Get token decimals
@@ -171,7 +164,7 @@ export async function transferToken(
       txHash: receipt.hash,
     }
   } catch (error) {
-    console.error("[v0] EVM transfer error:", error)
+    console.error("[v0] Ethereum transfer error:", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -183,12 +176,11 @@ export async function transferNative(
   fromAddress: string,
   toAddress: string,
   amount: string,
-  network: "ethereum" | "bnb",
 ): Promise<{ success: boolean; txHash?: string; error?: string }> {
   try {
-    console.log("[v0] Transferring native currency:", { fromAddress, toAddress, amount, network })
+    console.log("[v0] Transferring ETH:", { fromAddress, toAddress, amount })
 
-    const signer = getSigner(network)
+    const signer = getSigner()
     const amountInWei = ethers.parseEther(amount)
 
     const tx = await signer.sendTransaction({
@@ -198,14 +190,14 @@ export async function transferNative(
 
     const receipt = await tx.wait()
 
-    console.log("[v0] Native transfer successful:", receipt?.hash)
+    console.log("[v0] ETH transfer successful:", receipt?.hash)
 
     return {
       success: true,
       txHash: receipt?.hash,
     }
   } catch (error) {
-    console.error("[v0] Native transfer error:", error)
+    console.error("[v0] ETH transfer error:", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
