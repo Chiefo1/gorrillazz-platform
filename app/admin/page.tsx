@@ -60,7 +60,7 @@ export default function AdminPage() {
   const [withdrawToken, setWithdrawToken] = useState("GORR")
   const [withdrawAmount, setWithdrawAmount] = useState("")
   const [withdrawDestination, setWithdrawDestination] = useState("")
-  const [withdrawProvider, setWithdrawProvider] = useState<"revolut" | "paypal">("revolut")
+  const [withdrawProvider, setWithdrawProvider] = useState<"revolut" | "paypal" | "card">("revolut")
   const [withdrawCurrency, setWithdrawCurrency] = useState<"USD" | "EUR">("EUR")
 
   // Exchange state
@@ -408,11 +408,12 @@ export default function AdminPage() {
                     <label className="block text-white/80 text-sm font-medium mb-2">Payment Provider</label>
                     <select
                       value={withdrawProvider}
-                      onChange={(e) => setWithdrawProvider(e.target.value as "revolut" | "paypal")}
+                      onChange={(e) => setWithdrawProvider(e.target.value as "revolut" | "paypal" | "card")}
                       className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white"
                     >
                       <option value="revolut">Revolut (Primary)</option>
                       <option value="paypal">PayPal</option>
+                      <option value="card">Credit/Debit Card</option>
                     </select>
                   </div>
                   <div>

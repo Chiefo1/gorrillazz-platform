@@ -78,11 +78,14 @@ export default function WalletPage() {
   const [withdrawDestination, setWithdrawDestination] = useState("")
 
   useEffect(() => {
+    console.log("[v0] Wallet page mounted, isConnected:", isConnected, "address:", address)
     if (isConnected && address) {
       console.log("[v0] Wallet connected, fetching data for:", address)
       fetchTokens()
       fetchBalances()
       fetchTrades()
+    } else {
+      console.log("[v0] Wallet not connected, showing connect UI")
     }
   }, [isConnected, address, selectedChain, viewMode])
 
@@ -92,12 +95,78 @@ export default function WalletPage() {
       const type = viewMode === "coins" ? "popular" : "all"
       const chainParam = selectedChain !== "all" ? `&chain=${selectedChain}` : ""
       const response = await fetch(`/api/tokens/index?type=${type}${chainParam}`)
+
+      if (!response.ok) {
+        console.error("[v0] Failed to fetch tokens, status:", response.status)
+        setTokens([])
+        return
+      }
+
       const data = await response.json()
-      console.log("[v0] Tokens fetched:", data)
-      setTokens(data.tokens || [])
+      console.log("[v0] Tokens fetched successfully:", data)
+
+      const defaultTokens = [
+        {
+          id: "gorr",
+          symbol: "GORR",
+          name: "Gorrillazz",
+          logo: "/gorr-logo.svg",
+          price: 1.0,
+          change24h: 0,
+          chain: "gorrillazz",
+          contractAddress: process.env.NEXT_PUBLIC_GORR_CONTRACT_ADDRESS || "",
+          decimals: 18,
+          balance: "0",
+        },
+        {
+          id: "usdcc",
+          symbol: "USDCc",
+          name: "USD Coin (Gorrillazz)",
+          logo: "/usdcc-logo.png",
+          price: 1.0,
+          change24h: 0,
+          chain: "gorrillazz",
+          contractAddress: process.env.NEXT_PUBLIC_USDCC_CONTRACT_ADDRESS || "",
+          decimals: 6,
+          balance: "0",
+        },
+      ]
+
+      const fetchedTokens = data.tokens || []
+      const allTokens = [
+        ...defaultTokens,
+        ...fetchedTokens.filter((t: any) => t.symbol !== "GORR" && t.symbol !== "USDCc"),
+      ]
+
+      setTokens(allTokens)
     } catch (error) {
       console.error("[v0] Failed to fetch tokens:", error)
-      setTokens([])
+      setTokens([
+        {
+          id: "gorr",
+          symbol: "GORR",
+          name: "Gorrillazz",
+          logo: "/gorr-logo.svg",
+          price: 1.0,
+          change24h: 0,
+          chain: "gorrillazz",
+          contractAddress: process.env.NEXT_PUBLIC_GORR_CONTRACT_ADDRESS || "",
+          decimals: 18,
+          balance: "0",
+        },
+        {
+          id: "usdcc",
+          symbol: "USDCc",
+          name: "USD Coin (Gorrillazz)",
+          logo: "/usdcc-logo.png",
+          price: 1.0,
+          change24h: 0,
+          chain: "gorrillazz",
+          contractAddress: process.env.NEXT_PUBLIC_USDCC_CONTRACT_ADDRESS || "",
+          decimals: 6,
+          balance: "0",
+        },
+      ])
     }
   }
 
