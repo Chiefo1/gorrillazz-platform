@@ -1,0 +1,54 @@
+[33mfe5ab65[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m changes back to original state.
+[33m49db375[m changes
+[33m8e2f0f3[m Changes
+[33mc24a5c9[m new files
+[33m717d084[m changes to admin and wallet
+[33mee95a1d[m fix: resolve wallet balance JSON parsing error
+[33md3c85ec[m fix: resolve wallet balance JSON parsing error
+[33ma6c9e81[m fix: resolve wallet and admin payment issues
+[33m28f8745[m fix: resolve wallet and admin payment issues
+[33mf65a155[m fix: resolve wallet and admin payment issues
+[33m4002afe[m fix: restore wallet functionality and payment integration
+[33m656502b[m fix: restore wallet functionality and payment integration
+[33m92f7896[m fix: restore wallet functionality and payment integration
+[33m72f7666[m feat: migrate to Gorrillazz network
+[33m8089d32[m change to main
+[33m8f8cb97[m Downgrade React to 18 for compatibility with @react-three/fiber
+[33m17a7450[m feat: build comprehensive admin dashboard
+[33m96bb3ff[m feat: build comprehensive admin dashboard
+[33mdf7faff[m feat: build comprehensive admin dashboard
+[33md638f3d[m feat: build comprehensive admin dashboard
+[33m213f79c[m feat: build comprehensive admin dashboard
+[33m4949ab8[m feat: build comprehensive admin dashboard
+[33m7190409[m feat: build comprehensive admin dashboard
+[33m4464f2a[m feat: update logos with new SVG and fetch real blockchain data
+[33me4e7ea2[m feat: admin wallet fee-free & production setup
+[33m4aabfc7[m fix: remove secret references from vercel.json
+[33m3f018eb[m changes
+[33m34a29a0[m fix: remove secret references from vercel.json
+[33m9238567[m Initial commit
+[33m8ee9f90[m fix: resolve npm dependency conflicts
+[33m0a26527[m feat: make GORR the primary blockchain
+[33me9cfc76[m feat: update README and add database initialization script
+[33m7b9d5f0[m feat: update wallet integration and GL background
+[33m0476fdd[m feat: update wallet integration and GL background
+[33m5c9ae09[m feat: add WebGL particle background system
+[33m9dd1757[m refactor: restore v16 state for v18 branch
+[33m8f01d32[m refactor: restore v16 state for v18 branch
+[33mdbb5cbf[m refactor: restore v16 state for v18 branch
+[33mf42624b[m feat: replace ShaderBackground with WebGL particle system and update header
+[33m2031745[m feat: add send token functionality with blockchain integration
+[33mc6e13ca[m feat: add send token functionality with blockchain integration
+[33m5bc9514[m fix: resolve wallet logo and balance display issues
+[33ma206d38[m fix: resolve wallet logo and balance display issues
+[33m086d066[m feat: add USDCc token & cross-chain swap engine
+[33m85ab265[m feat: enhance wallet with compact cards, GORR logo, trade features, and custom token import
+[33m88d1243[m feat: enhance wallet with compact cards, GORR logo, trade features
+[33mb109b8f[m feat: build comprehensive wallet system with GORR coin and API
+[33m8aa3704[m feat: build comprehensive wallet system with GORR coin and API
+[33ma4263b2[m feat: add wallet page & apply glass theme
+[33m1b5f87c[m feat: add fullscreen animated menu & switch to MongoDB
+[33me7c6118[m feat: add fullscreen animated menu & switch to MongoDB
+[33m05346f6[m feat: sync main branch changes to gorrillazz-platform
+[33m673c734[m feat: sync main branch changes to gorrillazz-platform
+[33m14b901a[m Initialized repository for project Gorrillazz platform
