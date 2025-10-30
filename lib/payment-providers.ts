@@ -12,12 +12,12 @@ export interface PaymentProvider {
 export const PAYMENT_PROVIDERS: PaymentProvider[] = [
   {
     id: "revolut",
-    name: "Revolut", // Primary payment provider
+    name: "Revolut",
     type: "fiat",
     supportedCurrencies: ["USD", "EUR", "GBP"],
     fees: {
-      deposit: 0, // Free deposits
-      withdrawal: 0, // Free withdrawals for admin
+      deposit: 0,
+      withdrawal: 0.5,
     },
   },
   {
@@ -32,22 +32,22 @@ export const PAYMENT_PROVIDERS: PaymentProvider[] = [
   },
   {
     id: "paypal",
-    name: "PayPal", // Secondary payment provider
+    name: "PayPal",
     type: "fiat",
     supportedCurrencies: ["USD", "EUR", "GBP"],
     fees: {
-      deposit: 2.5,
-      withdrawal: 1.5,
+      deposit: 3.5,
+      withdrawal: 2.0,
     },
   },
   {
     id: "card",
-    name: "Credit/Debit Card", // Card payments
+    name: "Credit/Debit Card",
     type: "fiat",
     supportedCurrencies: ["USD", "EUR", "GBP"],
     fees: {
-      deposit: 2.9,
-      withdrawal: 2.0,
+      deposit: 3.0,
+      withdrawal: 2.5,
     },
   },
 ]
@@ -69,7 +69,7 @@ export interface PaymentTransaction {
   revokeReason?: string
 }
 
-export const ADMIN_WALLET_ADDRESS = process.env.ADMIN_WALLET_ADDRESS || "gorr_admin_wallet_2024"
+export const ADMIN_WALLET_ADDRESS = process.env.NEXT_PUBLIC_ADMIN_WALLET_ADDRESS || process.env.ADMIN_WALLET_ADDRESS!
 
 // Admin wallet is fee-free
 export function calculateFee(

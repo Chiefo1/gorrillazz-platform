@@ -1,11 +1,13 @@
-import type React from "react"
-import type { Metadata } from "next"
-import { GeistSans } from "geist/font/sans"
-import { GeistMono } from "geist/font/mono"
-import { Analytics } from "@vercel/analytics/next"
-import { Suspense } from "react"
-import { WalletProvider } from "@/lib/wallet-context"
-import "./globals.css"
+import type React from "react";
+import type { Metadata } from "next";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
+import { Analytics } from "@vercel/analytics/next";
+import { Suspense } from "react";
+
+import { WalletProvider } from "@/lib/wallet-context"; // ✅ correct import
+import GL from "@/components/gl";                      // ✅ background wrapper
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Gorrillazz - Multi-Chain Token Creation Platform",
@@ -16,21 +18,30 @@ export const metadata: Metadata = {
     icon: "/gorr-logo.svg",
     apple: "/gorr-logo.svg",
   },
-}
+};
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" className="dark">
-      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
+      <body
+        className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}
+      >
+        {/* ✅ Correct provider name */}
         <WalletProvider>
-          <Suspense fallback={null}>{children}</Suspense>
+          {/* ✅ Wrap your pages in GL so UI shows above background */}
+          <Suspense fallback={null}>
+            <GL>
+              {children}
+            </GL>
+          </Suspense>
         </WalletProvider>
+
         <Analytics />
       </body>
     </html>
-  )
+  );
 }

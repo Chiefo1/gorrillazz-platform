@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { ethers } from "ethers"
 
 export type WalletType = "trustwallet" | "binance" | "metamask" | "gorrillazz" | null
 export type ChainType = "solana" | "ethereum" | "bnb" | "gorrillazz"
@@ -142,15 +143,29 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }
 
   const connectGorrillazz = async () => {
-    const mockAddress = "gorr_" + Math.random().toString(36).substring(2, 15)
+    try {
+      // Generate a new wallet using ethers.js
+      const wallet = ethers.Wallet.createRandom()
+      const address = wallet.address
+      const privateKey = wallet.privateKey
 
-    setWalletType("gorrillazz")
-    setAddress(mockAddress)
-    setChain("gorrillazz")
+      // Store encrypted private key (in production, use proper encryption)
+      const encryptedKey = await wallet.encrypt("user-password-here") // Replace with actual user password
 
-    localStorage.setItem("gorrillazz_wallet", "gorrillazz")
-    localStorage.setItem("gorrillazz_address", mockAddress)
-    localStorage.setItem("gorrillazz_chain", "gorrillazz")
+      setWalletType("gorrillazz")
+      setAddress(address)
+      setChain("gorrillazz")
+
+      localStorage.setItem("gorrillazz_wallet", "gorrillazz")
+      localStorage.setItem("gorrillazz_address", address)
+      localStorage.setItem("gorrillazz_chain", "gorrillazz")
+      localStorage.setItem("gorrillazz_encrypted_key", encryptedKey)
+
+      console.log("[GORR] Wallet created:", address)
+    } catch (error) {
+      console.error("[GORR] Failed to create wallet:", error)
+      throw error
+    }
   }
 
   const disconnect = () => {
@@ -163,6 +178,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("gorrillazz_wallet")
     localStorage.removeItem("gorrillazz_address")
     localStorage.removeItem("gorrillazz_chain")
+    localStorage.removeItem("gorrillazz_encrypted_key")
   }
 
   const switchChain = async (newChain: ChainType) => {
@@ -191,17 +207,38 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }
 
   const refreshBalance = async () => {
-    if (!address || !chain) return
+    if (!address || !chain) {
+      console.log("[v0] Cannot refresh balance - no address or chain")
+      return
+    }
 
     try {
-      const response = await fetch(`/api/users/balance?wallet=${address}&network=${chain}`)
-      const data = await response.json()
+      console.log("[v0] Refreshing balance for:", address, chain)
+      const response = await fetch(`/api/wallet/balance?wallet=${address}&chain=${chain}`)
 
-      if (data.nativeBalance !== undefined) {
-        setBalance(data.nativeBalance)
+      const contentType = response.headers.get("content-type")
+      console.log("[v0] Response content-type:", contentType)
+
+      if (!contentType || !contentType.includes("application/json")) {
+        console.error("[v0] API returned non-JSON response, content-type:", contentType)
+        const text = await response.text()
+        console.error("[v0] Response text:", text.substring(0, 200))
+        return
       }
-      if (data.gorrBalance !== undefined) {
-        setGorrBalance(data.gorrBalance)
+
+      const data = await response.json()
+      console.log("[v0] Balance data received:", data)
+
+      if (data.totalValue !== undefined) {
+        console.log("[v0] Setting balance to:", data.totalValue)
+        setBalance(data.totalValue)
+      }
+      if (data.tokens) {
+        const gorrToken = data.tokens.find((t: any) => t.symbol === "GORR")
+        if (gorrToken) {
+          console.log("[v0] Setting GORR balance to:", gorrToken.balance)
+          setGorrBalance(Number.parseFloat(gorrToken.balance) || 0)
+        }
       }
     } catch (error) {
       console.error("[v0] Failed to fetch balance:", error)
@@ -210,12 +247,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (isConnected) {
+      console.log("[v0] Wallet connected, refreshing balance")
       refreshBalance()
-      fetch("/api/users/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ walletAddress: address }),
-      }).catch(console.error)
     }
   }, [isConnected, address, chain])
 

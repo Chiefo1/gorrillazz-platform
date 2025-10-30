@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
-import { GL } from "@/components/gl"
+import  GL  from "@/components/gl"
 import Navigation from "@/components/navigation"
 import GorrBadge from "@/components/gorr-badge"
 import { Button } from "@/components/ui/button"
@@ -44,7 +44,7 @@ export default function HomePage() {
 
   return (
     <>
-      <GL hovering={false} />
+      {/* <GL hovering={false} /> */}
       <Navigation />
 
       {/* Hero Section */}

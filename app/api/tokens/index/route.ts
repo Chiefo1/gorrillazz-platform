@@ -50,7 +50,7 @@ const ALL_TOKENS = [
     isPopular: true,
     balance: 0,
     verified: true,
-    isNative: true,
+    isNative: false,
     decimals: 18,
   },
   {

@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 
+
+
 // Detect environment
 const isDev = process.env.NODE_ENV === "development";
 

@@ -32,8 +32,6 @@ import { SUPPORTED_CHAINS } from "@/lib/constants/gorr-token"
 import { PAYMENT_PROVIDERS } from "@/lib/payment-providers"
 import Image from "next/image"
 
-
-
 type ViewMode = "tokens" | "coins"
 type TradeType = "buy" | "sell" | "trade"
 type PaymentModalType = "deposit" | "withdraw" | null
@@ -80,93 +78,133 @@ export default function WalletPage() {
   const [withdrawDestination, setWithdrawDestination] = useState("")
 
   useEffect(() => {
-    console.log("[v0] Wallet page mounted, isConnected:", isConnected, "address:", address)
+    console.log("[v0] Wallet page mounted")
+    console.log("[v0] isConnected:", isConnected, "address:", address)
+
     if (isConnected && address) {
       console.log("[v0] Wallet connected, fetching data for:", address)
       fetchTokens()
       fetchBalances()
       fetchTrades()
     } else {
-      console.log("[v0] Wallet not connected, showing connect UI")
-    }
-  }, [isConnected, address, selectedChain, viewMode])
-
-  const fetchTokens = async () => {
-    try {
-      console.log("[v0] Fetching tokens...")
-      const type = viewMode === "coins" ? "popular" : "all"
-      const chainParam = selectedChain !== "all" ? `&chain=${selectedChain}` : ""
-      const response = await fetch(`/api/tokens/index?type=${type}${chainParam}`)
-
-      if (!response.ok) {
-        console.error("[v0] Failed to fetch tokens, status:", response.status)
-        setTokens([])
-        return
-      }
-
-      const data = await response.json()
-      console.log("[v0] Tokens fetched successfully:", data)
-
+      console.log("[v0] Wallet not connected, setting default tokens")
       const defaultTokens = [
         {
           id: "gorr",
           symbol: "GORR",
           name: "Gorrillazz",
-          logo: "/gorr-logo.svg",
-          price: 1.0,
-          change24h: 0,
-          chain: "gorrillazz",
-          contractAddress: process.env.NEXT_PUBLIC_GORR_CONTRACT_ADDRESS || "",
-          decimals: 18,
           balance: "0",
+          price: 1,
+          value: 0,
+          chain: "gorrillazz",
+          logo: "/gorr-logo.svg",
+          contractAddress: "gorr_native_token",
+          decimals: 18,
+          isNative: false,
+          change24h: 0,
         },
         {
           id: "usdcc",
           symbol: "USDCc",
-          name: "USD Coin (Gorrillazz)",
-          logo: "/usdcc-logo.png",
-          price: 1.0,
-          change24h: 0,
-          chain: "gorrillazz",
-          contractAddress: process.env.NEXT_PUBLIC_USDCC_CONTRACT_ADDRESS || "",
-          decimals: 6,
+          name: "USD Coin Custom",
           balance: "0",
+          price: 1,
+          value: 0,
+          chain: "gorrillazz",
+          logo: "/usdcc-logo.png",
+          contractAddress: process.env.NEXT_PUBLIC_USDCC_CONTRACT_ADDRESS,
+          decimals: 18,
+          isNative: false,
+          change24h: 0,
         },
       ]
+      console.log("[v0] Setting default tokens:", defaultTokens)
+      setTokens(defaultTokens)
+    }
+  }, [isConnected, address, selectedChain, viewMode])
 
-      const fetchedTokens = data.tokens || []
-      const allTokens = [
-        ...defaultTokens,
-        ...fetchedTokens.filter((t: any) => t.symbol !== "GORR" && t.symbol !== "USDCc"),
-      ]
+  const fetchTokens = async () => {
+    try {
+      const type = viewMode === "coins" ? "popular" : "all"
+      const chainParam = selectedChain !== "all" ? `&chain=${selectedChain}` : ""
+      console.log("[v0] Fetching tokens with params:", { type, chainParam })
+      const response = await fetch(`/api/tokens/index?type=${type}${chainParam}`)
 
-      setTokens(allTokens)
+      const contentType = response.headers.get("content-type")
+      if (!contentType || !contentType.includes("application/json")) {
+        console.error("[v0] API returned non-JSON response:", contentType)
+        throw new Error("Invalid response type")
+      }
+
+      const data = await response.json()
+      console.log("[v0] Tokens fetched from API:", data)
+      if (data.tokens && data.tokens.length > 0) {
+        console.log("[v0] Setting tokens state with:", data.tokens.length, "tokens")
+        setTokens(data.tokens)
+      } else {
+        console.log("[v0] No tokens from API, using defaults")
+        setTokens([
+          {
+            id: "gorr",
+            symbol: "GORR",
+            name: "Gorrillazz",
+            balance: "0",
+            price: 1,
+            value: 0,
+            chain: "gorrillazz",
+            logo: "/gorr-logo.svg",
+            contractAddress: "gorr_native_token",
+            decimals: 18,
+            isNative: false,
+            change24h: 0,
+          },
+          {
+            id: "usdcc",
+            symbol: "USDCc",
+            name: "USD Coin Custom",
+            balance: "0",
+            price: 1,
+            value: 0,
+            chain: "gorrillazz",
+            logo: "/usdcc-logo.png",
+            contractAddress: process.env.NEXT_PUBLIC_USDCC_CONTRACT_ADDRESS,
+            decimals: 18,
+            isNative: false,
+            change24h: 0,
+          },
+        ])
+      }
     } catch (error) {
       console.error("[v0] Failed to fetch tokens:", error)
+      console.log("[v0] Error occurred, setting default tokens")
       setTokens([
         {
           id: "gorr",
           symbol: "GORR",
           name: "Gorrillazz",
-          logo: "/gorr-logo.svg",
-          price: 1.0,
-          change24h: 0,
-          chain: "gorrillazz",
-          contractAddress: process.env.NEXT_PUBLIC_GORR_CONTRACT_ADDRESS || "",
-          decimals: 18,
           balance: "0",
+          price: 1,
+          value: 0,
+          chain: "gorrillazz",
+          logo: "/gorr-logo.svg",
+          contractAddress: "gorr_native_token",
+          decimals: 18,
+          isNative: false,
+          change24h: 0,
         },
         {
           id: "usdcc",
           symbol: "USDCc",
-          name: "USD Coin (Gorrillazz)",
-          logo: "/usdcc-logo.png",
-          price: 1.0,
-          change24h: 0,
-          chain: "gorrillazz",
-          contractAddress: process.env.NEXT_PUBLIC_USDCC_CONTRACT_ADDRESS || "",
-          decimals: 6,
+          name: "USD Coin Custom",
           balance: "0",
+          price: 1,
+          value: 0,
+          chain: "gorrillazz",
+          logo: "/usdcc-logo.png",
+          contractAddress: process.env.NEXT_PUBLIC_USDCC_CONTRACT_ADDRESS,
+          decimals: 18,
+          isNative: false,
+          change24h: 0,
         },
       ])
     }
@@ -176,37 +214,44 @@ export default function WalletPage() {
     try {
       console.log("[v0] Fetching balances for:", address, chain)
       const response = await fetch(`/api/wallet/balance?wallet=${address}&chain=${chain}`)
+
+      const contentType = response.headers.get("content-type")
+      if (!contentType || !contentType.includes("application/json")) {
+        console.error("[v0] Balance API returned non-JSON response:", contentType)
+        return
+      }
+
       const data = await response.json()
-      console.log("[v0] Balances fetched:", data)
+      console.log("[v0] Balances fetched from API:", data)
       setBalances(data)
       if (data.tokens && data.tokens.length > 0) {
+        console.log("[v0] Merging balance data with tokens")
         setTokens((prevTokens) => {
           const balanceMap = new Map(data.tokens.map((t: any) => [t.symbol, t]))
-          return prevTokens.map((token) => {
+          const updatedTokens = prevTokens.map((token) => {
             const balanceData = balanceMap.get(token.symbol)
             if (balanceData) {
-              return { ...token, balance: balanceData.balance, value: balanceData.value }
+              console.log("[v0] Updating token:", token.symbol, "with balance:", balanceData.balance)
+              return { ...token, ...balanceData }
             }
             return token
           })
+          console.log("[v0] Updated tokens state:", updatedTokens)
+          return updatedTokens
         })
       }
     } catch (error) {
       console.error("[v0] Failed to fetch balances:", error)
-      setBalances({ tokens: [], totalValue: 0 })
     }
   }
 
   const fetchTrades = async () => {
     try {
-      console.log("[v0] Fetching trades...")
       const response = await fetch(`/api/wallet/trades?wallet=${address}`)
       const data = await response.json()
-      console.log("[v0] Trades fetched:", data)
       setTrades(data.trades || [])
     } catch (error) {
       console.error("[v0] Failed to fetch trades:", error)
-      setTrades([])
     }
   }
 
@@ -566,6 +611,13 @@ export default function WalletPage() {
                 <h3 className="text-xl font-semibold text-foreground mb-4">
                   {viewMode === "tokens" ? "Your Tokens" : "Popular Coins"}
                 </h3>
+                <div className="p-3 mb-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                  <p className="text-sm text-blue-400">
+                    Debug: {tokens.length} tokens loaded | Loading: {loading.toString()} | Connected:{" "}
+                    {isConnected.toString()}
+                  </p>
+                  <p className="text-xs text-blue-300 mt-1">Check browser console for detailed logs</p>
+                </div>
                 {loading && tokens.length === 0 ? (
                   <div className="text-center py-12">
                     <RefreshCw className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
@@ -573,115 +625,118 @@ export default function WalletPage() {
                   </div>
                 ) : tokens.length === 0 ? (
                   <div className="text-center py-12">
-                    <p className="text-muted-foreground">No tokens found</p>
-                    <GlassButton variant="primary" size="sm" onClick={fetchTokens} className="mt-4">
-                      Retry
+                    <p className="text-muted-foreground mb-4">No tokens found</p>
+                    <GlassButton variant="primary" size="sm" onClick={fetchTokens}>
+                      Refresh
                     </GlassButton>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                    {tokens.map((token) => (
-                      <div
-                        key={token.id}
-                        className="p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all border border-white/5 hover:border-white/20"
-                      >
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="relative w-8 h-8 rounded-full overflow-hidden bg-white/10 flex-shrink-0">
-                            <Image
-                              src={token.logo || "/placeholder.svg?height=32&width=32"}
-                              alt={token.symbol}
-                              width={32}
-                              height={32}
-                              className="object-cover"
-                              unoptimized={token.logo?.startsWith("http")}
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement
-                                target.src = "/placeholder.svg?height=32&width=32&query=" + token.symbol
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <p className="font-semibold text-sm text-foreground truncate">{token.symbol}</p>
-                            <p className="text-xs text-muted-foreground truncate">{token.name}</p>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2 mb-3">
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs text-muted-foreground">Price</span>
-                            <span className="text-sm font-semibold text-foreground">
-                              ${token.price.toLocaleString()}
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs text-muted-foreground">24h</span>
-                            <div className="flex items-center gap-1">
-                              {token.change24h >= 0 ? (
-                                <>
-                                  <TrendingUp className="w-3 h-3 text-accent" />
-                                  <span className="text-xs text-accent">+{token.change24h}%</span>
-                                </>
-                              ) : (
-                                <>
-                                  <TrendingDown className="w-3 h-3 text-destructive" />
-                                  <span className="text-xs text-destructive">{token.change24h}%</span>
-                                </>
-                              )}
+                    {tokens.map((token) => {
+                      console.log("[v0] Rendering token:", token.symbol, token)
+                      return (
+                        <div
+                          key={token.id}
+                          className="p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all border border-white/5 hover:border-white/20"
+                        >
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="relative w-8 h-8 rounded-full overflow-hidden bg-white/10 flex-shrink-0">
+                              <Image
+                                src={
+                                  token.logo?.startsWith("/")
+                                    ? token.logo
+                                    : `/placeholder.svg?height=32&width=32&query=${token.symbol}`
+                                }
+                                alt={token.symbol}
+                                width={32}
+                                height={32}
+                                className="object-cover"
+                                unoptimized
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-sm text-foreground truncate">{token.symbol}</p>
+                              <p className="text-xs text-muted-foreground truncate">{token.name}</p>
                             </div>
                           </div>
-                        </div>
 
-                        <div className="grid grid-cols-4 gap-1">
-                          <button
-                            onClick={() => openTradeModal(token, "buy")}
-                            className="px-2 py-1 text-xs rounded-lg bg-accent/20 hover:bg-accent/30 text-accent transition-colors flex items-center justify-center gap-1"
-                          >
-                            <ArrowDownLeft className="w-3 h-3" />
-                            Buy
-                          </button>
-                          <button
-                            onClick={() => openTradeModal(token, "sell")}
-                            className="px-2 py-1 text-xs rounded-lg bg-destructive/20 hover:bg-destructive/30 text-destructive transition-colors flex items-center justify-center gap-1"
-                          >
-                            <ArrowUpRight className="w-3 h-3" />
-                            Sell
-                          </button>
-                          <button
-                            onClick={() => openTradeModal(token, "trade")}
-                            className="px-2 py-1 text-xs rounded-lg bg-primary/20 hover:bg-primary/30 text-primary transition-colors flex items-center justify-center gap-1"
-                          >
-                            <Repeat className="w-3 h-3" />
-                            Swap
-                          </button>
-                          <button
-                            onClick={() => openSendModal(token)}
-                            className="px-2 py-1 text-xs rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors flex items-center justify-center gap-1"
-                          >
-                            <Send className="w-3 h-3" />
-                            Send
-                          </button>
-                        </div>
+                          <div className="space-y-2 mb-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs text-muted-foreground">Price</span>
+                              <span className="text-sm font-semibold text-foreground">
+                                ${token.price.toLocaleString()}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs text-muted-foreground">24h</span>
+                              <div className="flex items-center gap-1">
+                                {token.change24h >= 0 ? (
+                                  <>
+                                    <TrendingUp className="w-3 h-3 text-accent" />
+                                    <span className="text-xs text-accent">+{token.change24h}%</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <TrendingDown className="w-3 h-3 text-destructive" />
+                                    <span className="text-xs text-destructive">{token.change24h}%</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
 
-                        {(token.symbol === "GORR" || token.symbol === "USDCc") && (
-                          <div className="grid grid-cols-2 gap-1 pt-2 border-t border-white/10">
+                          <div className="grid grid-cols-4 gap-1">
                             <button
-                              onClick={() => openPaymentModal(token, "deposit")}
-                              className="px-2 py-1 text-xs rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400 transition-colors flex items-center justify-center gap-1"
+                              onClick={() => openTradeModal(token, "buy")}
+                              className="px-2 py-1 text-xs rounded-lg bg-accent/20 hover:bg-accent/30 text-accent transition-colors flex items-center justify-center gap-1"
                             >
-                              <CreditCard className="w-3 h-3" />
-                              Buy with Fiat
+                              <ArrowDownLeft className="w-3 h-3" />
+                              Buy
                             </button>
                             <button
-                              onClick={() => openPaymentModal(token, "withdraw")}
-                              className="px-2 py-1 text-xs rounded-lg bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 transition-colors flex items-center justify-center gap-1"
+                              onClick={() => openTradeModal(token, "sell")}
+                              className="px-2 py-1 text-xs rounded-lg bg-destructive/20 hover:bg-destructive/30 text-destructive transition-colors flex items-center justify-center gap-1"
                             >
-                              <DollarSign className="w-3 h-3" />
-                              Withdraw
+                              <ArrowUpRight className="w-3 h-3" />
+                              Sell
+                            </button>
+                            <button
+                              onClick={() => openTradeModal(token, "trade")}
+                              className="px-2 py-1 text-xs rounded-lg bg-primary/20 hover:bg-primary/30 text-primary transition-colors flex items-center justify-center gap-1"
+                            >
+                              <Repeat className="w-3 h-3" />
+                              Swap
+                            </button>
+                            <button
+                              onClick={() => openSendModal(token)}
+                              className="px-2 py-1 text-xs rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors flex items-center justify-center gap-1"
+                            >
+                              <Send className="w-3 h-3" />
+                              Send
                             </button>
                           </div>
-                        )}
-                      </div>
-                    ))}
+
+                          {(token.symbol === "GORR" || token.symbol === "USDCc") && (
+                            <div className="grid grid-cols-2 gap-1 pt-2 border-t border-white/10">
+                              <button
+                                onClick={() => openPaymentModal(token, "deposit")}
+                                className="px-2 py-1 text-xs rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400 transition-colors flex items-center justify-center gap-1"
+                              >
+                                <CreditCard className="w-3 h-3" />
+                                Buy with Fiat
+                              </button>
+                              <button
+                                onClick={() => openPaymentModal(token, "withdraw")}
+                                className="px-2 py-1 text-xs rounded-lg bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 transition-colors flex items-center justify-center gap-1"
+                              >
+                                <DollarSign className="w-3 h-3" />
+                                Withdraw
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
               </GlassCard>

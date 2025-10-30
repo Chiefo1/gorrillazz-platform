@@ -1,3 +1,5 @@
+import { ethers } from "ethers"
+
 export interface GorrillazzTokenConfig {
   name: string
   symbol: string
@@ -9,34 +11,50 @@ export interface GorrillazzTokenConfig {
 export async function deployGorrillazzToken(
   config: GorrillazzTokenConfig,
   walletAddress: string,
-): Promise<{ success: boolean; contractAddress?: string; error?: string }> {
+): Promise<{ success: boolean; contractAddress?: string; error?: string; txHash?: string }> {
   try {
-    console.log("[v0] Deploying on PRIMARY Gorrillazz chain:", config)
+    console.log("[GORR] Deploying token on Gorrillazz network:", config)
 
-    // Get Gorrillazz network configuration
-    const rpcUrl = process.env.GORRILLAZZ_RPC_URL || "https://rpc.gorrillazz.network"
-    const chainId = process.env.GORRILLAZZ_CHAIN_ID || "9999"
-    const privateKey = process.env.GORRILLAZZ_PRIVATE_KEY
+    // Initialize provider and wallet
+    const provider = new ethers.JsonRpcProvider(process.env.GORRILLAZZ_RPC_URL)
+    const wallet = new ethers.Wallet(process.env.GORRILLAZZ_PRIVATE_KEY!, provider)
 
-    if (!privateKey) {
-      throw new Error("GORRILLAZZ_PRIVATE_KEY not found in environment variables")
-    }
+    // ERC-20 contract bytecode and ABI
+    const contractABI = [
+      "constructor(string memory name, string memory symbol, uint256 initialSupply)",
+      "function name() view returns (string)",
+      "function symbol() view returns (string)",
+      "function decimals() view returns (uint8)",
+      "function totalSupply() view returns (uint256)",
+      "function balanceOf(address) view returns (uint256)",
+      "function transfer(address to, uint256 amount) returns (bool)",
+    ]
 
-    // Simulate deployment (replace with actual deployment logic)
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    // Deploy contract
+    const factory = new ethers.ContractFactory(contractABI, getERC20Bytecode(), wallet)
+    const contract = await factory.deploy(
+      config.name,
+      config.symbol,
+      ethers.parseUnits(config.totalSupply, config.decimals),
+    )
 
-    const mockAddress = `GORR${Math.random().toString(36).substring(2, 15).toUpperCase()}`
+    await contract.waitForDeployment()
+    const contractAddress = await contract.getAddress()
+    const deploymentTx = contract.deploymentTransaction()
 
-    console.log("[v0] Successfully deployed on GORR primary network:", mockAddress)
+    console.log("[GORR] Token deployed successfully:", contractAddress)
+    console.log("[GORR] Transaction hash:", deploymentTx?.hash)
 
     return {
       success: true,
-      contractAddress: mockAddress,
+      contractAddress,
+      txHash: deploymentTx?.hash,
     }
   } catch (error) {
+    console.error("[GORR] Deployment failed:", error)
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: error instanceof Error ? error.message : "Unknown deployment error",
     }
   }
 }
@@ -45,30 +63,47 @@ export async function createGorrillazzLiquidityPool(
   tokenAddress: string,
   amount: string,
   lockPeriod: number,
-): Promise<{ success: boolean; poolAddress?: string; error?: string }> {
+): Promise<{ success: boolean; poolAddress?: string; txHash?: string; error?: string }> {
   try {
-    console.log("[v0] Creating liquidity pool on PRIMARY Gorrillazz network:", { tokenAddress, amount, lockPeriod })
+    console.log("[GORR] Creating liquidity pool:", { tokenAddress, amount, lockPeriod })
 
-    // Get Gorrillazz network configuration
-    const rpcUrl = process.env.GORRILLAZZ_RPC_URL || "https://rpc.gorrillazz.network"
-    const privateKey = process.env.GORRILLAZZ_PRIVATE_KEY
+    const provider = new ethers.JsonRpcProvider(process.env.GORRILLAZZ_RPC_URL)
+    const wallet = new ethers.Wallet(process.env.GORRILLAZZ_PRIVATE_KEY!, provider)
 
-    if (!privateKey) {
-      throw new Error("GORRILLAZZ_PRIVATE_KEY not found in environment variables")
-    }
+    // Gorrillazz DEX Router contract
+    const dexRouterAddress = process.env.GORRILLAZZ_DEX_ROUTER || "0x..." // Replace with actual DEX router
+    const dexRouterABI = [
+      "function addLiquidity(address tokenA, address tokenB, uint amountA, uint amountB, uint amountAMin, uint amountBMin, address to, uint deadline) returns (uint amountA, uint amountB, uint liquidity)",
+      "function createPair(address tokenA, address tokenB) returns (address pair)",
+    ]
 
-    // Simulate pool creation (replace with actual logic)
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    const dexRouter = new ethers.Contract(dexRouterAddress, dexRouterABI, wallet)
 
-    const mockPoolAddress = `GORRPool${Math.random().toString(36).substring(2, 15).toUpperCase()}`
+    // Create pair and add liquidity
+    const usdccAddress = process.env.USDCC_CONTRACT_ADDRESS_GORRILLAZZ!
+    const deadline = Math.floor(Date.now() / 1000) + 60 * 20 // 20 minutes
 
-    console.log("[v0] Successfully created pool on GORR primary network:", mockPoolAddress)
+    const tx = await dexRouter.addLiquidity(
+      tokenAddress,
+      usdccAddress,
+      ethers.parseEther(amount),
+      ethers.parseEther(amount),
+      0,
+      0,
+      wallet.address,
+      deadline,
+    )
+
+    const receipt = await tx.wait()
+    console.log("[GORR] Liquidity pool created:", receipt.hash)
 
     return {
       success: true,
-      poolAddress: mockPoolAddress,
+      poolAddress: receipt.logs[0]?.address,
+      txHash: receipt.hash,
     }
   } catch (error) {
+    console.error("[GORR] Liquidity pool creation failed:", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -76,12 +111,52 @@ export async function createGorrillazzLiquidityPool(
   }
 }
 
-export function getGorrPrice(): number {
-  // GORR is pegged 1:1 to EUR
-  return Number.parseFloat(process.env.GORR_PRICE_EUR || "1.0")
+export function getGorrPrice(): { usd: number; eur: number } {
+  return {
+    usd: Number.parseFloat(process.env.GORR_PRICE_USD || "1.09"),
+    eur: Number.parseFloat(process.env.GORR_PRICE_EUR || "1.0"),
+  }
 }
 
-export function getGorrPriceInUSD(): number {
-  // GORR price in USD (approximately 1.09 USD per EUR)
-  return Number.parseFloat(process.env.GORR_PRICE_USD || "1.09")
+export async function getWalletBalance(
+  walletAddress: string,
+): Promise<{ gorr: string; usdcc: string; native: string }> {
+  try {
+    const provider = new ethers.JsonRpcProvider(process.env.GORRILLAZZ_RPC_URL)
+
+    // Get native balance
+    const nativeBalance = await provider.getBalance(walletAddress)
+
+    // Get GORR token balance
+    const gorrContract = new ethers.Contract(
+      process.env.GORR_CONTRACT_ADDRESS_GORRILLAZZ!,
+      ["function balanceOf(address) view returns (uint256)"],
+      provider,
+    )
+    const gorrBalance = await gorrContract.balanceOf(walletAddress)
+
+    // Get USDCc token balance
+    const usdccContract = new ethers.Contract(
+      process.env.USDCC_CONTRACT_ADDRESS_GORRILLAZZ!,
+      ["function balanceOf(address) view returns (uint256)"],
+      provider,
+    )
+    const usdccBalance = await usdccContract.balanceOf(walletAddress)
+
+    return {
+      gorr: ethers.formatEther(gorrBalance),
+      usdcc: ethers.formatEther(usdccBalance),
+      native: ethers.formatEther(nativeBalance),
+    }
+  } catch (error) {
+    console.error("[GORR] Failed to fetch wallet balance:", error)
+    return { gorr: "0", usdcc: "0", native: "0" }
+  }
+}
+
+// ERC-20 bytecode (simplified - replace with actual compiled bytecode)
+function getERC20Bytecode(): string {
+  // This should be the actual compiled bytecode from your Solidity contract
+  // For production, compile your ERC-20 contract and use the bytecode
+  return "0x..." // Replace with actual bytecode
 }

@@ -1,14 +1,19 @@
 "use client"
 
 import type React from "react"
+
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { motion } from "framer-motion"
+import Image from "next/image"
 import GL from "@/components/gl"
 import Navigation from "@/components/navigation"
 import BackButton from "@/components/back-button"
 import { GlassCard, GlassButton, GlassInput } from "@/components/glass"
-import { motion } from "framer-motion"
+import GlassToggle from "@/components/glass/glass-toggle"
 import { useWallet } from "@/lib/wallet-context"
+import { Wallet, Copy, Check, TrendingUp, TrendingDown, RefreshCw, Shield } from "lucide-react"
+import { SUPPORTED_CHAINS } from "@/lib/constants/gorr-token"
 
 interface PendingToken {
   chainId: number
@@ -23,50 +28,22 @@ interface PendingToken {
   }
 }
 
-interface AdminWalletBalance {
-  gorr: number
-  usdcc: number
-  eth: number
-  bnb: number
-  sol: number
-}
-
-interface ExchangeStats {
-  volume24h: number
-  trades24h: number
-  liquidity: Array<{
-    token: string
-    available: number
-    locked: number
-    total: number
-  }>
-}
-
-const ADMIN_WALLET = "gorr_admin_wallet_2024"
+const ADMIN_WALLET = process.env.NEXT_PUBLIC_ADMIN_WALLET_ADDRESS!
 
 export default function AdminPage() {
   const router = useRouter()
-  const { address, isConnected } = useWallet()
+  const { address, chain, balance, gorrBalance, isConnected, disconnect } = useWallet()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [pendingTokens, setPendingTokens] = useState<PendingToken[]>([])
-  const [activeTab, setActiveTab] = useState<"tokens" | "wallet" | "exchange" | "payments">("wallet")
-
-  // Wallet state
-  const [walletBalance, setWalletBalance] = useState<AdminWalletBalance | null>(null)
-  const [withdrawToken, setWithdrawToken] = useState("GORR")
-  const [withdrawAmount, setWithdrawAmount] = useState("")
-  const [withdrawDestination, setWithdrawDestination] = useState("")
-  const [withdrawProvider, setWithdrawProvider] = useState<"revolut" | "paypal" | "card">("revolut")
-  const [withdrawCurrency, setWithdrawCurrency] = useState<"USD" | "EUR">("EUR")
-
-  // Exchange state
-  const [exchangeStats, setExchangeStats] = useState<ExchangeStats | null>(null)
-  const [liquidityToken, setLiquidityToken] = useState("GORR")
-  const [liquidityAmount, setLiquidityAmount] = useState("")
+  const [copied, setCopied] = useState(false)
+  const [viewMode, setViewMode] = useState<"tokens" | "coins">("tokens")
+  const [selectedChain, setSelectedChain] = useState<string>("all")
+  const [tokens, setTokens] = useState<any[]>([])
+  const [balances, setBalances] = useState<any>(null)
 
   useEffect(() => {
     if (isConnected && address === ADMIN_WALLET) {
@@ -77,8 +54,8 @@ export default function AdminPage() {
   useEffect(() => {
     if (isAuthenticated) {
       fetchPendingTokens()
-      fetchWalletBalance()
-      fetchExchangeStats()
+      fetchTokens()
+      fetchBalances()
     }
   }, [isAuthenticated])
 
@@ -94,28 +71,83 @@ export default function AdminPage() {
     }
   }
 
-  const fetchWalletBalance = async () => {
+  const fetchTokens = async () => {
     try {
-      const response = await fetch("/api/admin/wallet/balance")
-      if (response.ok) {
+      const defaultTokens = [
+        {
+          id: "gorr",
+          symbol: "GORR",
+          name: "Gorrillazz",
+          balance: "1000",
+          price: 1,
+          value: 1000,
+          chain: "gorrillazz",
+          logo: "/gorr-logo.svg",
+          contractAddress: "gorr_native_token",
+          decimals: 18,
+          isNative: false,
+          change24h: 0,
+        },
+        {
+          id: "usdcc",
+          symbol: "USDCc",
+          name: "USD Coin Custom",
+          balance: "500",
+          price: 1,
+          value: 500,
+          chain: "gorrillazz",
+          logo: "/usdcc-logo.png",
+          contractAddress: process.env.NEXT_PUBLIC_USDCC_CONTRACT_ADDRESS,
+          decimals: 18,
+          isNative: false,
+          change24h: 0,
+        },
+      ]
+      setTokens(defaultTokens)
+
+      const type = viewMode === "coins" ? "popular" : "all"
+      const chainParam = selectedChain !== "all" ? `&chain=${selectedChain}` : ""
+      const response = await fetch(`/api/tokens/index?type=${type}${chainParam}`)
+
+      const contentType = response.headers.get("content-type")
+      if (contentType && contentType.includes("application/json")) {
         const data = await response.json()
-        setWalletBalance(data.balance)
+        if (data.tokens && data.tokens.length > 0) {
+          setTokens(data.tokens)
+        }
       }
     } catch (error) {
-      console.error("[v0] Failed to fetch wallet balance:", error)
+      // Keep default tokens on error
     }
   }
 
-  const fetchExchangeStats = async () => {
+  const fetchBalances = async () => {
     try {
-      const response = await fetch("/api/admin/exchange/stats")
-      if (response.ok) {
+      const response = await fetch(`/api/wallet/balance?wallet=${address}&chain=${chain}`)
+
+      const contentType = response.headers.get("content-type")
+      if (contentType && contentType.includes("application/json")) {
         const data = await response.json()
-        setExchangeStats(data.stats)
+        setBalances(data)
+        if (data.tokens && data.tokens.length > 0) {
+          setTokens((prevTokens) => {
+            const balanceMap = new Map(data.tokens.map((t: any) => [t.symbol, t]))
+            return prevTokens.map((token) => {
+              const balanceData = balanceMap.get(token.symbol)
+              return balanceData ? { ...token, ...balanceData } : token
+            })
+          })
+        }
       }
     } catch (error) {
-      console.error("[v0] Failed to fetch exchange stats:", error)
+      // Silent fail
     }
+  }
+
+  const handleRefresh = async () => {
+    setLoading(true)
+    await Promise.all([fetchTokens(), fetchBalances(), fetchPendingTokens()])
+    setLoading(false)
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -155,71 +187,6 @@ export default function AdminPage() {
     }
   }
 
-  const handleWithdraw = async () => {
-    if (!withdrawAmount || !withdrawDestination) {
-      alert("Please fill in all fields")
-      return
-    }
-
-    try {
-      const response = await fetch("/api/admin/wallet/withdraw", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token: withdrawToken,
-          amount: Number.parseFloat(withdrawAmount),
-          destination: withdrawDestination,
-          provider: withdrawProvider,
-          currency: withdrawCurrency,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (data.success) {
-        alert(`Withdrawal successful! TX ID: ${data.txId}`)
-        setWithdrawAmount("")
-        setWithdrawDestination("")
-        fetchWalletBalance()
-      } else {
-        alert(`Withdrawal failed: ${data.error}`)
-      }
-    } catch (error) {
-      alert("Withdrawal failed")
-    }
-  }
-
-  const handleSetLiquidity = async () => {
-    if (!liquidityAmount) {
-      alert("Please enter liquidity amount")
-      return
-    }
-
-    try {
-      const response = await fetch("/api/admin/exchange/liquidity", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token: liquidityToken,
-          amount: Number.parseFloat(liquidityAmount),
-          adminAddress: ADMIN_WALLET,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (data.success) {
-        alert("Liquidity updated successfully!")
-        setLiquidityAmount("")
-        fetchExchangeStats()
-      } else {
-        alert(`Failed to set liquidity: ${data.error}`)
-      }
-    } catch (error) {
-      alert("Failed to set liquidity")
-    }
-  }
-
   const handleApprove = async (chainId: number, address: string) => {
     try {
       const response = await fetch("/api/admin/tokens/approve", {
@@ -252,15 +219,36 @@ export default function AdminPage() {
     }
   }
 
+  const copyAddress = () => {
+    if (address) {
+      navigator.clipboard.writeText(address)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  const handleViewModeToggle = (checked: boolean) => {
+    setViewMode(checked ? "coins" : "tokens")
+  }
+
+  const handleChainSelect = (chainId: string) => {
+    setSelectedChain(chainId)
+  }
+
   if (!isAuthenticated) {
     return (
       <>
         <GL hovering={false} />
         <Navigation />
-        <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
+        <div className="relative z-10 min-h-screen flex items-center justify-center px-4 pt-20">
           <BackButton />
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
             <GlassCard className="p-8">
+              <div className="flex items-center justify-center mb-6">
+                <div className="w-16 h-16 rounded-2xl bg-primary/30 flex items-center justify-center">
+                  <Shield className="w-8 h-8 text-primary" />
+                </div>
+              </div>
               <h1 className="text-3xl font-bold text-white mb-2 text-center">Admin Login</h1>
               <p className="text-white/60 text-center mb-8">
                 Access the Gorrillazz admin dashboard
@@ -271,10 +259,12 @@ export default function AdminPage() {
                 <div>
                   <label className="block text-white/80 text-sm font-medium mb-2">Username</label>
                   <GlassInput
+                    label="Username"
                     type="text"
                     value={username}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
                     placeholder="Enter username"
+                    className="w-full"
                     required
                   />
                 </div>
@@ -282,10 +272,12 @@ export default function AdminPage() {
                 <div>
                   <label className="block text-white/80 text-sm font-medium mb-2">Password</label>
                   <GlassInput
+                    label="Password"
                     type="password"
                     value={password}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                     placeholder="Enter password"
+                    className="w-full"
                     required
                   />
                 </div>
@@ -311,301 +303,258 @@ export default function AdminPage() {
     <>
       <GL hovering={false} />
       <Navigation />
-      <div className="relative z-10 min-h-screen px-4 py-20">
+      <main className="relative min-h-screen px-6 pt-24 pb-20">
         <BackButton />
         <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-4xl font-bold text-white mb-2">Admin Dashboard</h1>
-              <p className="text-white/60">
-                Full control over Gorrillazz platform, exchange, and payments
-                <span className="block mt-1 text-sm">Admin Wallet: {ADMIN_WALLET}</span>
-              </p>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-primary/30 flex items-center justify-center">
+                <Shield className="w-6 h-6 text-primary" />
+              </div>
+              <h1 className="text-4xl md:text-5xl font-bold text-foreground">
+                Admin <span className="text-primary">Dashboard</span>
+              </h1>
             </div>
-            <GlassButton onClick={handleLogout}>Logout</GlassButton>
-          </div>
+            <p className="text-lg text-muted-foreground">Manage your wallet and token verifications</p>
+          </motion.div>
 
-          <div className="flex gap-2 mb-6">
-            <GlassButton
-              onClick={() => setActiveTab("wallet")}
-              className={activeTab === "wallet" ? "bg-purple-500/30" : ""}
-            >
-              Wallet & Payments
-            </GlassButton>
-            <GlassButton
-              onClick={() => setActiveTab("exchange")}
-              className={activeTab === "exchange" ? "bg-purple-500/30" : ""}
-            >
-              Exchange & Liquidity
-            </GlassButton>
-            <GlassButton
-              onClick={() => setActiveTab("tokens")}
-              className={activeTab === "tokens" ? "bg-purple-500/30" : ""}
-            >
-              Token Verifications
-            </GlassButton>
-          </div>
-
-          {activeTab === "wallet" && (
-            <div className="space-y-6">
-              <GlassCard className="p-6">
-                <h2 className="text-2xl font-bold text-white mb-4">Admin Wallet Balance</h2>
-                {walletBalance && (
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                    <div className="bg-white/5 rounded-lg p-4">
-                      <p className="text-white/60 text-sm mb-1">GORR (EUR 1:1)</p>
-                      <p className="text-2xl font-bold text-purple-400">{walletBalance.gorr.toLocaleString()}</p>
-                      <p className="text-white/40 text-xs mt-1">€{walletBalance.gorr.toLocaleString()}</p>
-                    </div>
-                    <div className="bg-white/5 rounded-lg p-4">
-                      <p className="text-white/60 text-sm mb-1">USDCc</p>
-                      <p className="text-2xl font-bold text-blue-400">{walletBalance.usdcc.toLocaleString()}</p>
-                      <p className="text-white/40 text-xs mt-1">${walletBalance.usdcc.toLocaleString()}</p>
-                    </div>
-                    <div className="bg-white/5 rounded-lg p-4">
-                      <p className="text-white/60 text-sm mb-1">ETH</p>
-                      <p className="text-2xl font-bold text-blue-300">{walletBalance.eth.toFixed(2)}</p>
-                    </div>
-                    <div className="bg-white/5 rounded-lg p-4">
-                      <p className="text-white/60 text-sm mb-1">BNB</p>
-                      <p className="text-2xl font-bold text-yellow-400">{walletBalance.bnb.toFixed(2)}</p>
-                    </div>
-                    <div className="bg-white/5 rounded-lg p-4">
-                      <p className="text-white/60 text-sm mb-1">SOL</p>
-                      <p className="text-2xl font-bold text-green-400">{walletBalance.sol.toFixed(2)}</p>
-                    </div>
-                  </div>
-                )}
-              </GlassCard>
-
-              <GlassCard className="p-6">
-                <h2 className="text-2xl font-bold text-white mb-4">Withdraw Funds (Fee-Free)</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-white/80 text-sm font-medium mb-2">Token</label>
-                    <select
-                      value={withdrawToken}
-                      onChange={(e) => setWithdrawToken(e.target.value)}
-                      className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white"
-                    >
-                      <option value="GORR">GORR</option>
-                      <option value="USDCc">USDCc</option>
-                      <option value="ETH">ETH</option>
-                      <option value="BNB">BNB</option>
-                      <option value="SOL">SOL</option>
-                    </select>
+          <div className="space-y-6 mb-8">
+            <GlassCard variant="primary">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/30 flex items-center justify-center">
+                    <Wallet className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <label className="block text-white/80 text-sm font-medium mb-2">Amount</label>
-                    <GlassInput
-                      type="number"
-                      value={withdrawAmount}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWithdrawAmount(e.target.value)}
-                      placeholder="Enter amount"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-white/80 text-sm font-medium mb-2">Payment Provider</label>
-                    <select
-                      value={withdrawProvider}
-                      onChange={(e) => setWithdrawProvider(e.target.value as "revolut" | "paypal" | "card")}
-                      className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white"
-                    >
-                      <option value="revolut">Revolut (Primary)</option>
-                      <option value="paypal">PayPal</option>
-                      <option value="card">Credit/Debit Card</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-white/80 text-sm font-medium mb-2">Currency</label>
-                    <select
-                      value={withdrawCurrency}
-                      onChange={(e) => setWithdrawCurrency(e.target.value as "USD" | "EUR")}
-                      className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white"
-                    >
-                      <option value="EUR">EUR</option>
-                      <option value="USD">USD</option>
-                    </select>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-white/80 text-sm font-medium mb-2">Destination Account</label>
-                    <GlassInput
-                      type="text"
-                      value={withdrawDestination}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWithdrawDestination(e.target.value)}
-                      placeholder="Enter account email or ID"
-                    />
+                    <h3 className="text-lg font-semibold text-foreground">Admin Wallet</h3>
+                    <div className="flex items-center gap-2">
+                      <code className="text-xs text-muted-foreground font-mono">
+                        {address?.slice(0, 6)}...{address?.slice(-4)}
+                      </code>
+                      <button onClick={copyAddress} className="p-1 hover:bg-white/10 rounded transition-colors">
+                        {copied ? (
+                          <Check className="w-3 h-3 text-accent" />
+                        ) : (
+                          <Copy className="w-3 h-3 text-muted-foreground" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <GlassButton onClick={handleWithdraw} className="mt-4 w-full bg-green-500/20 hover:bg-green-500/30">
-                  Withdraw (Instant & Fee-Free)
-                </GlassButton>
-              </GlassCard>
-            </div>
-          )}
 
-          {activeTab === "exchange" && (
-            <div className="space-y-6">
-              <GlassCard className="p-6">
-                <h2 className="text-2xl font-bold text-white mb-4">Exchange Statistics</h2>
-                {exchangeStats && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-white/5 rounded-lg p-4">
-                      <p className="text-white/60 text-sm mb-1">24h Volume</p>
-                      <p className="text-2xl font-bold text-green-400">€{exchangeStats.volume24h.toLocaleString()}</p>
-                    </div>
-                    <div className="bg-white/5 rounded-lg p-4">
-                      <p className="text-white/60 text-sm mb-1">24h Trades</p>
-                      <p className="text-2xl font-bold text-blue-400">{exchangeStats.trades24h.toLocaleString()}</p>
-                    </div>
-                    <div className="bg-white/5 rounded-lg p-4">
-                      <p className="text-white/60 text-sm mb-1">Total Liquidity</p>
-                      <p className="text-2xl font-bold text-purple-400">
-                        €{exchangeStats.liquidity.reduce((sum, l) => sum + l.total, 0).toLocaleString()}
-                      </p>
-                    </div>
+                {balances && (
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Portfolio</p>
+                    <p className="text-2xl font-bold text-foreground">${balances.totalValue?.toLocaleString()}</p>
+                    <p className="text-xs text-accent">+2.34%</p>
                   </div>
                 )}
 
-                <h3 className="text-xl font-bold text-white mb-3">Liquidity Pools</h3>
-                {exchangeStats?.liquidity.map((pool) => (
-                  <div key={pool.token} className="bg-white/5 rounded-lg p-4 mb-3">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="text-white font-semibold">{pool.token}</p>
-                        <p className="text-white/60 text-sm">
-                          Available: {pool.available.toLocaleString()} | Locked: {pool.locked.toLocaleString()}
-                        </p>
-                      </div>
-                      <p className="text-2xl font-bold text-purple-400">{pool.total.toLocaleString()}</p>
-                    </div>
-                  </div>
-                ))}
-              </GlassCard>
-
-              <GlassCard className="p-6">
-                <h2 className="text-2xl font-bold text-white mb-4">Set Liquidity</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-white/80 text-sm font-medium mb-2">Token</label>
-                    <select
-                      value={liquidityToken}
-                      onChange={(e) => setLiquidityToken(e.target.value)}
-                      className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white"
-                    >
-                      <option value="GORR">GORR</option>
-                      <option value="USDCc">USDCc</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-white/80 text-sm font-medium mb-2">Amount</label>
-                    <GlassInput
-                      type="number"
-                      value={liquidityAmount}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLiquidityAmount(e.target.value)}
-                      placeholder="Enter liquidity amount"
-                    />
-                  </div>
+                <div className="flex gap-2">
+                  <GlassButton variant="transparent" size="sm" onClick={handleRefresh} disabled={loading}>
+                    <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+                  </GlassButton>
+                  <GlassButton variant="danger" size="sm" onClick={handleLogout}>
+                    Logout
+                  </GlassButton>
                 </div>
+              </div>
+            </GlassCard>
+
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+              <div className="flex gap-2 flex-wrap">
                 <GlassButton
-                  onClick={handleSetLiquidity}
-                  className="mt-4 w-full bg-purple-500/20 hover:bg-purple-500/30"
+                  variant={selectedChain === "all" ? "primary" : "transparent"}
+                  size="sm"
+                  onClick={() => handleChainSelect("all")}
                 >
-                  Update Liquidity
+                  All
                 </GlassButton>
-              </GlassCard>
+                {SUPPORTED_CHAINS.map((c) => (
+                  <GlassButton
+                    key={c.id}
+                    variant={selectedChain === c.id ? "primary" : "transparent"}
+                    size="sm"
+                    onClick={() => handleChainSelect(c.id)}
+                  >
+                    {c.symbol}
+                  </GlassButton>
+                ))}
+              </div>
+
+              <GlassToggle
+                checked={viewMode === "coins"}
+                onChange={handleViewModeToggle}
+                label={viewMode === "coins" ? "Coins" : "Tokens"}
+              />
             </div>
-          )}
 
-          {activeTab === "tokens" && (
-            <div className="space-y-6">
-              <GlassCard className="p-6 mb-6">
-                <h2 className="text-xl font-bold text-white mb-4">Fee Structure</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-white/5 rounded-lg p-4">
-                    <p className="text-white/60 text-sm mb-1">GORR Token</p>
-                    <p className="text-2xl font-bold text-green-400">FREE</p>
-                  </div>
-                  <div className="bg-white/5 rounded-lg p-4">
-                    <p className="text-white/60 text-sm mb-1">USDCc Token</p>
-                    <p className="text-2xl font-bold text-green-400">FREE</p>
-                  </div>
-                  <div className="bg-white/5 rounded-lg p-4">
-                    <p className="text-white/60 text-sm mb-1">Other Tokens</p>
-                    <p className="text-2xl font-bold text-blue-400">200 GORR</p>
-                  </div>
+            <GlassCard>
+              <h3 className="text-xl font-semibold text-foreground mb-4">
+                {viewMode === "tokens" ? "Your Tokens" : "Popular Coins"}
+              </h3>
+              {loading && tokens.length === 0 ? (
+                <div className="text-center py-12">
+                  <RefreshCw className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+                  <p className="text-muted-foreground">Loading tokens...</p>
                 </div>
-              </GlassCard>
-
-              <GlassCard className="p-6">
-                <h2 className="text-xl font-bold text-white mb-4">Pending Verifications ({pendingTokens.length})</h2>
-
-                {pendingTokens.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-white/60">No pending token verifications</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {pendingTokens.map((token) => (
-                      <motion.div
-                        key={`${token.chainId}-${token.address}`}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-white/5 rounded-lg p-4 flex items-center justify-between"
-                      >
-                        <div className="flex items-center gap-4">
-                          <img
-                            src={token.logoURI || "/placeholder.svg"}
-                            alt={token.name}
-                            className="w-12 h-12 rounded-full"
+              ) : tokens.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground mb-4">No tokens found</p>
+                  <GlassButton variant="primary" size="sm" onClick={fetchTokens}>
+                    Refresh
+                  </GlassButton>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                  {tokens.map((token) => (
+                    <div
+                      key={token.id}
+                      className="p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all border border-white/5 hover:border-white/20"
+                    >
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="relative w-8 h-8 rounded-full overflow-hidden bg-white/10 flex-shrink-0">
+                          <Image
+                            src={
+                              token.logo?.startsWith("/")
+                                ? token.logo
+                                : `/placeholder.svg?height=32&width=32&query=${token.symbol}`
+                            }
+                            alt={token.symbol}
+                            width={32}
+                            height={32}
+                            className="object-cover"
+                            unoptimized
                           />
-                          <div>
-                            <h3 className="text-white font-semibold">
-                              {token.name} ({token.symbol})
-                            </h3>
-                            <p className="text-white/60 text-sm">{token.address}</p>
-                            {token.extensions?.website && (
-                              <a
-                                href={token.extensions.website}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-400 text-sm hover:underline"
-                              >
-                                {token.extensions.website}
-                              </a>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm text-foreground truncate">{token.symbol}</p>
+                          <p className="text-xs text-muted-foreground truncate">{token.name}</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 mb-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-muted-foreground">Balance</span>
+                          <span className="text-sm font-semibold text-foreground">
+                            {token.balance || "0"} {token.symbol}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-muted-foreground">Value</span>
+                          <span className="text-sm font-semibold text-foreground">
+                            ${(Number(token.balance || 0) * token.price).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-muted-foreground">24h</span>
+                          <div className="flex items-center gap-1">
+                            {token.change24h >= 0 ? (
+                              <>
+                                <TrendingUp className="w-3 h-3 text-accent" />
+                                <span className="text-xs text-accent">+{token.change24h}%</span>
+                              </>
+                            ) : (
+                              <>
+                                <TrendingDown className="w-3 h-3 text-destructive" />
+                                <span className="text-xs text-destructive">{token.change24h}%</span>
+                              </>
                             )}
                           </div>
                         </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </GlassCard>
+          </div>
 
-                        <div className="flex items-center gap-3">
-                          <div className="text-right mr-4">
-                            <p className="text-white/60 text-sm">Registration Fee</p>
-                            <p className="text-white font-semibold">
-                              {token.symbol === "GORR" || token.symbol === "USDCc" ? "FREE" : "200 GORR"}
-                            </p>
-                          </div>
-                          <GlassButton
-                            onClick={() => handleApprove(token.chainId, token.address)}
-                            className="bg-green-500/20 hover:bg-green-500/30"
-                          >
-                            Approve
-                          </GlassButton>
-                          <GlassButton
-                            onClick={() => handleReject(token.chainId, token.address)}
-                            className="bg-red-500/20 hover:bg-red-500/30"
-                          >
-                            Reject
-                          </GlassButton>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-              </GlassCard>
+          <GlassCard className="p-6 mb-6">
+            <h2 className="text-xl font-bold text-white mb-4">Fee Structure</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white/5 rounded-lg p-4">
+                <p className="text-white/60 text-sm mb-1">GORR Token</p>
+                <p className="text-2xl font-bold text-green-400">FREE</p>
+              </div>
+              <div className="bg-white/5 rounded-lg p-4">
+                <p className="text-white/60 text-sm mb-1">USDCc Token</p>
+                <p className="text-2xl font-bold text-green-400">FREE</p>
+              </div>
+              <div className="bg-white/5 rounded-lg p-4">
+                <p className="text-white/60 text-sm mb-1">Other Tokens</p>
+                <p className="text-2xl font-bold text-blue-400">200 GORR</p>
+              </div>
             </div>
-          )}
+          </GlassCard>
+
+          <GlassCard className="p-6">
+            <h2 className="text-xl font-bold text-white mb-4">Pending Verifications ({pendingTokens.length})</h2>
+
+            {pendingTokens.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-white/60">No pending token verifications</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {pendingTokens.map((token) => (
+                  <motion.div
+                    key={`${token.chainId}-${token.address}`}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white/5 rounded-lg p-4 flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-4">
+                      <img
+                        src={token.logoURI || "/placeholder.svg"}
+                        alt={token.name}
+                        className="w-12 h-12 rounded-full"
+                      />
+                      <div>
+                        <h3 className="text-white font-semibold">
+                          {token.name} ({token.symbol})
+                        </h3>
+                        <p className="text-white/60 text-sm">{token.address}</p>
+                        {token.extensions?.website && (
+                          <a
+                            href={token.extensions.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-400 text-sm hover:underline"
+                          >
+                            {token.extensions.website}
+                          </a>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="text-right mr-4">
+                        <p className="text-white/60 text-sm">Registration Fee</p>
+                        <p className="text-white font-semibold">
+                          {token.symbol === "GORR" || token.symbol === "USDCc" ? "FREE" : "200 GORR"}
+                        </p>
+                      </div>
+                      <GlassButton
+                        onClick={() => handleApprove(token.chainId, token.address)}
+                        className="bg-green-500/20 hover:bg-green-500/30"
+                      >
+                        Approve
+                      </GlassButton>
+                      <GlassButton
+                        onClick={() => handleReject(token.chainId, token.address)}
+                        className="bg-red-500/20 hover:bg-red-500/30"
+                      >
+                        Reject
+                      </GlassButton>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </GlassCard>
         </div>
-      </div>
+      </main>
     </>
   )
 }
