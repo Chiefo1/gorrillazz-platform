@@ -1,20 +1,12 @@
 /** @type {import('next').NextConfig} */
 
-
-
 // Detect environment
 const isDev = process.env.NODE_ENV === "development";
 
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  images: {
-    unoptimized: true,
-  },
+  eslint: { ignoreDuringBuilds: true },
+  typescript: { ignoreBuildErrors: true },
+  images: { unoptimized: true },
 
   async headers() {
     return [
@@ -24,10 +16,8 @@ const nextConfig = {
           {
             key: "Content-Security-Policy",
             value: isDev
-              // 🧪 Development: allow eval + inline for hot reload, devtools, etc.
-              ? "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com; object-src 'none'; base-uri 'self';"
-              // 🔐 Production: secure CSP, no eval or inline scripts
-              : "script-src 'self' https://va.vercel-scripts.com; object-src 'none'; base-uri 'self';",
+              ? "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' wss: https:;"
+              : "default-src 'self' data: blob: https://va.vercel-scripts.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' wss: https:;",
           },
         ],
       },

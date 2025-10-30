@@ -1,7 +1,7 @@
 "use client"
 
 import { AnimatePresence } from "framer-motion"
-import { GL } from "@/components/gl"
+// import { GL } from "@/components/gl"
 import Navigation from "@/components/navigation"
 import BackButton from "@/components/back-button"
 import { TokenCreatorProvider, useTokenCreator } from "@/lib/token-creator-context"
@@ -34,7 +34,7 @@ function TokenWizardContent() {
 export default function CreateTokenPage() {
   return (
     <>
-      <GL hovering={false} />
+      {/* <GL hovering={false} /> */}
       <Navigation />
       <BackButton href="/" />
       <div className="relative z-10">
